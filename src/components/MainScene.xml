@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="MainScene" extends="Scene">
+    <interface>
+        <field id="serverUrl" type="string" />
+        <field id="username" type="string" />
+        <field id="password" type="string" />
+        <field id="signInComplete" type="boolean" />
+    </interface>
+    <children>
+        <Label id="title" text="Dispatcharr DVR" translation="[70,45]"
+            font="font:LargeBoldSystemFont" />
+        <LabelList id="recordingsList" translation="[70,150]" itemSize="[1100,65]" numRows="8"
+            focusable="true" />
+        <Video id="video" visible="false" />
+        <SignInScreen id="signInScreen" visible="false" />
+    </children>
+</component>

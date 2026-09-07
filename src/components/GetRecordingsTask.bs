@@ -1,0 +1,31 @@
+sub init()
+    m.top.functionName = "getRecordings"
+end sub
+
+
+sub getRecordings()
+    xfer = CreateObject("roUrlTransfer")
+    url = m.top.serverUrl + "/api/channels/recordings/"
+
+    if m.top.recordingId <> ""
+        url += m.top.recordingId + "/"
+    end if
+
+    xfer.setUrl(url)
+
+    xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    xfer.AddHeader("X-Roku-Reserved-Dev-Id", "")
+    xfer.InitClientCertificates()
+
+    xfer.addHeader("Authorization", "Bearer " + m.top.token)
+    xfer.addHeader("Accept", "application/json")
+
+    result = xfer.GetToString()
+    recordings = ParseJson(result)
+
+    if m.top.recordingId <> ""
+        recordings = [recordings]
+    end if
+
+    m.top.recordings = recordings
+end sub

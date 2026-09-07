@@ -1,0 +1,155 @@
+sub init()
+    m.token = ""
+
+    m.list = m.top.findNode("recordingsList")
+    m.title = m.top.findNode("title")
+    m.video = m.top.findNode("video")
+    m.signInScreen = m.top.findNode("signInScreen")
+    m.video.observeField("state", "onState")
+
+    m.top.observeField("signInComplete", "onSignInComplete")
+    m.serverInfoStored = false
+
+    m.recordings = []
+
+    m.getOAuthTokenTask = createObject("roSGNode", "GetOAuthTokenTask")
+    m.getRecordingsTask = createObject("roSGNode", "GetRecordingsTask")
+
+    m.list.observeField("itemSelected", "onRecordingSelected")
+
+    registry = CreateObject("roRegistrySection", "DispatcharrDVR")
+    if registry.exists("serverUrl") then m.top.serverUrl = registry.read("serverUrl")
+    if registry.exists("username") then m.top.username = registry.read("username")
+    if registry.exists("password") then m.top.password = registry.read("password")
+
+    if m.top.serverUrl = invalid or m.top.serverUrl = "" or m.top.username = invalid or m.top.username = "" or m.top.password = invalid or m.top.password = ""
+        m.signInScreen.setup = true
+        m.signInScreen.visible = true
+    else
+        m.top.signInComplete = true
+        m.serverInfoStored = true
+    end if
+end sub
+
+sub onSignInComplete()
+    if not m.serverInfoStored
+        registry = CreateObject("roRegistrySection", "DispatcharrDVR")
+        registry.write("serverUrl", m.top.serverUrl)
+        registry.write("username", m.top.username)
+        registry.write("password", m.top.password)
+    end if
+
+    m.getOAuthTokenTask.serverUrl = m.top.serverUrl
+    m.getOAuthTokenTask.username = m.top.username
+    m.getOAuthTokenTask.password = m.top.password
+    m.getOAuthTokenTask.observeField("token", "onAccessTokenObtained")
+    m.getOAuthTokenTask.control = "run"
+end sub
+
+sub onAccessTokenObtained()
+    m.token = m.getOAuthTokenTask.token
+
+    m.getRecordingsTask.serverUrl = m.top.serverUrl
+    m.getRecordingsTask.token = m.token
+    m.getRecordingsTask.observeField("recordings", "onRecordingsReturned")
+    m.getRecordingsTask.control = "run"
+end sub
+
+sub onRecordingsReturned()
+    content = CreateObject("roSGNode", "ContentNode")
+    m.recordings = m.getRecordingsTask.recordings
+    m.getRecordingsTask.unobserveField("recordings")
+
+    for each recording in m.recordings
+        item = content.createChild("ContentNode")
+        item.title = recording.custom_properties.program.title
+        item.secondarytitle = recording.custom_properties.program.sub_title
+        item.description = recording.custom_properties.program.description
+    end for
+
+    m.list.content = content
+    m.list.setFocus(true)
+end sub
+
+sub onRecordingSelected()
+    index = m.list.itemSelected
+
+    if index < 0
+        return
+    end if
+
+    if index >= m.recordings.count()
+        return
+    end if
+
+    recording = m.recordings[index]
+    recordingId = recording.id
+
+    ' Requery the recording if it stopped since we pulled the list.
+    ' We need the most up to date URL because it would have changed from HLS to MKV.
+    m.getRecordingsTask.recordingId = recordingId.ToStr()
+    m.getRecordingsTask.observeField("recordings", "playRecording")
+    m.getRecordingsTask.control = "run"
+end sub
+
+
+sub playRecording()
+    recording = m.getRecordingsTask.recordings[0]
+    title = recording.custom_properties.program.title
+
+    hlsUrl = m.top.serverUrl + recording.custom_properties.file_url
+
+    content = CreateObject("roSGNode", "ContentNode")
+
+    content.url = hlsUrl
+    content.title = title
+
+    if right(hlsUrl, 5) = ".m3u8"
+        content.streamFormat = "hls"
+        content.live = true
+    else
+        content.streamFormat = "mkv"
+        content.length = (recording.custom_properties.program.endMs - recording.custom_properties.program.startMs) / 1000
+    end if
+
+    content.AddHeader("Authorization", "Bearer " + m.token)
+
+    m.video.content = content
+
+    m.title.visible = false
+    m.list.visible = false
+
+    m.video.visible = true
+    m.video.setFocus(true)
+    m.video.control = "play"
+end sub
+
+sub onState()
+    ? m.video.state
+end sub
+
+function onKeyEvent(key as string, press as boolean) as boolean
+    if not press
+        return false
+    end if
+
+    ' BACK while playing
+    if m.video.visible
+        if key = "back"
+            m.video.control = "stop"
+
+            m.video.visible = false
+
+            m.title.visible = true
+            m.list.visible = true
+
+            m.list.setFocus(true)
+
+            return true
+        end if
+
+        return false
+    end if
+
+    return false
+end function

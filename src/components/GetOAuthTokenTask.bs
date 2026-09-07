@@ -1,0 +1,34 @@
+sub init()
+    m.top.functionName = "getOAuthToken"
+end sub
+
+
+sub getOAuthToken()
+    xfer = CreateObject("roUrlTransfer")
+    xfer.setUrl(m.top.serverUrl + "/api/accounts/token/")
+    xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    xfer.AddHeader("X-Roku-Reserved-Dev-Id", "")
+    xfer.InitClientCertificates()
+
+    xfer.addHeader("Content-Type","application/json")
+    xfer.addHeader("Accept", "application/json")
+
+    body = {
+        username: m.top.username,
+        password: m.top.password
+    }
+
+    json = FormatJson(body)
+
+    port = CreateObject("roMessagePort")
+    xfer.SetMessagePort(port)
+
+    if xfer.AsyncPostFromString(json)
+        msg = wait(0, port)
+
+        if type(msg) = "roUrlEvent"
+            response = ParseJson(msg.GetString())
+            m.top.token = response.access
+        end if
+    end if
+end sub

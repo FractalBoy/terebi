@@ -1,0 +1,22 @@
+{
+  "name": "dispatcharr-dvr-roku",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx rimraf build/ out/ && npx bsc --project bsconfig.json"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@rokucommunity/bslint": "^0.8.45",
+    "brighterscript": "^0.73.1",
+    "roku-deploy": "^3.18.4"
+  },
+  "dependencies": {
+    "@rokucommunity/bslib": "^0.1.1",
+    "brighterscript-formatter": "^1.8.2"
+  }
+}

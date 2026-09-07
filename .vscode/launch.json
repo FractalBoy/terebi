@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "brightscript",
+            "request": "launch",
+            "name": "Jellyfin Debug",
+            "rootDir": "${workspaceFolder}/build/staging",
+            "preLaunchTask": "build-dev",
+            "stopOnEntry": false,
+            "injectRaleTrackerTask": false,
+            "injectRdbOnDeviceComponent": false,
+            "host": "${promptForHost}",
+            "password": "${promptForPassword}",
+        }
+    ]
+}
