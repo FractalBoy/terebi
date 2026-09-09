@@ -4,11 +4,12 @@
         <field id="serverUrl" type="string" />
         <field id="username" type="string" />
         <field id="password" type="string" />
-        <field id="signInComplete" type="boolean" />
     </interface>
     <children>
         <Label id="title" text="Dispatcharr DVR" translation="[70,45]"
             font="font:LargeBoldSystemFont" />
+        <Button id="logoutButton" text="Log out" translation="[1640,40]" minWidth="180"
+            height="64" visible="false" showFocusFootprint="true" />
         <LabelList id="recordingsList" translation="[70,150]" itemSize="[1100,65]" numRows="8"
             focusable="true" />
         <Video id="video" visible="false" />

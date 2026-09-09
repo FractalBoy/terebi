@@ -2,7 +2,7 @@
 <component name="GetRecordingsTask" extends="Task">
     <interface>
         <field id="serverUrl" type="string" />
-        <field id="token" type="string" />
+        <field id="jwtToken" type="string" />
         <field id="recordingId" type="string" />
         <field id="recordings" type="roArray" />
     </interface>

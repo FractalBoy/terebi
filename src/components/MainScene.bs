@@ -1,64 +1,124 @@
 sub init()
-    m.token = ""
+    m.jwtToken = ""
+    m.authRequestId = 0
+    m.isLoggedIn = false
+    m.recordings = []
 
     m.list = m.top.findNode("recordingsList")
     m.title = m.top.findNode("title")
+    m.logoutButton = m.top.findNode("logoutButton")
     m.video = m.top.findNode("video")
     m.signInScreen = m.top.findNode("signInScreen")
-    m.video.observeField("state", "onState")
-
-    m.top.observeField("signInComplete", "onSignInComplete")
-    m.serverInfoStored = false
-
-    m.recordings = []
-
-    m.getOAuthTokenTask = createObject("roSGNode", "GetOAuthTokenTask")
     m.getRecordingsTask = createObject("roSGNode", "GetRecordingsTask")
 
+    m.video.observeField("state", "onState")
     m.list.observeField("itemSelected", "onRecordingSelected")
+    m.logoutButton.observeField("buttonSelected", "showLogoutConfirmation")
+    m.signInScreen.observeField("submissionId", "onCredentialsSubmitted")
 
-    registry = CreateObject("roRegistrySection", "DispatcharrDVR")
+    m.title.visible = false
+    m.list.visible = false
+    m.logoutButton.visible = false
+
+    registry = CreateObject("roRegistrySection", "DispatcharrRoku")
     if registry.exists("serverUrl") then m.top.serverUrl = registry.read("serverUrl")
     if registry.exists("username") then m.top.username = registry.read("username")
     if registry.exists("password") then m.top.password = registry.read("password")
 
-    if m.top.serverUrl = invalid or m.top.serverUrl = "" or m.top.username = invalid or m.top.username = "" or m.top.password = invalid or m.top.password = ""
-        m.signInScreen.setup = true
-        m.signInScreen.visible = true
+    if hasCredentials()
+        startAuthentication(false)
     else
-        m.top.signInComplete = true
-        m.serverInfoStored = true
+        showSignInScreen("")
     end if
 end sub
 
-sub onSignInComplete()
-    if not m.serverInfoStored
-        registry = CreateObject("roRegistrySection", "DispatcharrDVR")
-        registry.write("serverUrl", m.top.serverUrl)
-        registry.write("username", m.top.username)
-        registry.write("password", m.top.password)
+function hasCredentials() as boolean
+    if m.top.serverUrl = invalid or m.top.serverUrl = ""
+        return false
     end if
+    if m.top.username = invalid or m.top.username = ""
+        return false
+    end if
+    return m.top.password <> invalid and m.top.password <> ""
+end function
 
-    m.getOAuthTokenTask.serverUrl = m.top.serverUrl
-    m.getOAuthTokenTask.username = m.top.username
-    m.getOAuthTokenTask.password = m.top.password
-    m.getOAuthTokenTask.observeField("token", "onAccessTokenObtained")
-    m.getOAuthTokenTask.control = "run"
+sub showSignInScreen(errorMessage as string)
+    m.isLoggedIn = false
+    m.title.visible = false
+    m.list.visible = false
+    m.logoutButton.visible = false
+    m.signInScreen.serverUrl = m.top.serverUrl
+    m.signInScreen.username = m.top.username
+    m.signInScreen.password = m.top.password
+    m.signInScreen.errorMessage = errorMessage
+    m.signInScreen.visible = true
+    m.signInScreen.activationId = m.signInScreen.activationId + 1
 end sub
 
-sub onAccessTokenObtained()
-    m.token = m.getOAuthTokenTask.token
+sub onCredentialsSubmitted()
+    m.top.serverUrl = m.signInScreen.serverUrl
+    m.top.username = m.signInScreen.username
+    m.top.password = m.signInScreen.password
+    startAuthentication(true)
+end sub
 
+sub startAuthentication(saveOnSuccess as boolean)
+    m.authRequestId = m.authRequestId + 1
+    m.saveCredentialsOnSuccess = saveOnSuccess
+
+    m.activeJwtTask = createObject("roSGNode", "GetJwtTokenTask")
+    m.activeJwtTask.serverUrl = m.top.serverUrl
+    m.activeJwtTask.username = m.top.username
+    m.activeJwtTask.password = m.top.password
+    m.activeJwtTask.requestId = m.authRequestId
+    m.activeJwtTask.observeFieldScoped("authStatus", "onJwtAuthenticationChanged")
+    m.activeJwtTask.control = "run"
+end sub
+
+sub onJwtAuthenticationChanged()
+    if m.activeJwtTask = invalid
+        return
+    end if
+    if m.activeJwtTask.requestId <> m.authRequestId
+        return
+    end if
+
+    if m.activeJwtTask.authStatus = "success"
+        m.jwtToken = m.activeJwtTask.jwtToken
+        if m.saveCredentialsOnSuccess
+            registry = CreateObject("roRegistrySection", "DispatcharrRoku")
+            registry.write("serverUrl", m.top.serverUrl)
+            registry.write("username", m.top.username)
+            registry.write("password", m.top.password)
+            registry.flush()
+        end if
+
+        m.isLoggedIn = true
+        m.signInScreen.visible = false
+        m.signInScreen.isSubmitting = false
+        requestRecordings()
+    else if m.activeJwtTask.authStatus = "failure"
+        m.jwtToken = ""
+        showSignInScreen("Unable to sign in. Check your server URL, username, and password.")
+    end if
+end sub
+
+sub requestRecordings()
     m.getRecordingsTask.serverUrl = m.top.serverUrl
-    m.getRecordingsTask.token = m.token
+    m.getRecordingsTask.jwtToken = m.jwtToken
+    m.getRecordingsTask.recordingId = ""
     m.getRecordingsTask.observeField("recordings", "onRecordingsReturned")
     m.getRecordingsTask.control = "run"
 end sub
 
 sub onRecordingsReturned()
+    m.getRecordingsTask.unobserveField("recordings")
+    if not m.isLoggedIn
+        return
+    end if
+
     content = CreateObject("roSGNode", "ContentNode")
     m.recordings = m.getRecordingsTask.recordings
-    m.getRecordingsTask.unobserveField("recordings")
 
     for each recording in m.recordings
         item = content.createChild("ContentNode")
@@ -68,39 +128,34 @@ sub onRecordingsReturned()
     end for
 
     m.list.content = content
+    m.title.visible = true
+    m.list.visible = true
+    m.logoutButton.visible = true
     m.list.setFocus(true)
 end sub
 
 sub onRecordingSelected()
     index = m.list.itemSelected
-
-    if index < 0
-        return
-    end if
-
-    if index >= m.recordings.count()
+    if index < 0 or index >= m.recordings.count()
         return
     end if
 
     recording = m.recordings[index]
-    recordingId = recording.id
-
-    ' Requery the recording if it stopped since we pulled the list.
-    ' We need the most up to date URL because it would have changed from HLS to MKV.
-    m.getRecordingsTask.recordingId = recordingId.ToStr()
+    m.getRecordingsTask.recordingId = recording.id.ToStr()
     m.getRecordingsTask.observeField("recordings", "playRecording")
     m.getRecordingsTask.control = "run"
 end sub
 
-
 sub playRecording()
+    m.getRecordingsTask.unobserveField("recordings")
+    if not m.isLoggedIn or m.getRecordingsTask.recordings.count() = 0
+        return
+    end if
+
     recording = m.getRecordingsTask.recordings[0]
     title = recording.custom_properties.program.title
-
     hlsUrl = m.top.serverUrl + recording.custom_properties.file_url
-
     content = CreateObject("roSGNode", "ContentNode")
-
     content.url = hlsUrl
     content.title = title
 
@@ -112,16 +167,62 @@ sub playRecording()
         content.length = (recording.custom_properties.program.endMs - recording.custom_properties.program.startMs) / 1000
     end if
 
-    content.AddHeader("Authorization", "Bearer " + m.token)
-
+    content.AddHeader("Authorization", "Bearer " + m.jwtToken)
     m.video.content = content
-
     m.title.visible = false
     m.list.visible = false
-
+    m.logoutButton.visible = false
     m.video.visible = true
     m.video.setFocus(true)
     m.video.control = "play"
+end sub
+
+sub showLogoutConfirmation()
+    m.logoutConfirmed = false
+    m.logoutDialog = createObject("roSGNode", "StandardMessageDialog")
+    m.logoutDialog.title = "Log out?"
+    m.logoutDialog.message = ["Saved server and sign-in credentials will be removed from this Roku."]
+    m.logoutDialog.buttons = ["Log out", "Cancel"]
+    m.logoutDialog.observeFieldScoped("buttonSelected", "onLogoutDialogSelected")
+    m.logoutDialog.observeFieldScoped("wasClosed", "onLogoutDialogClosed")
+    m.top.dialog = m.logoutDialog
+end sub
+
+sub onLogoutDialogSelected()
+    if m.logoutDialog.buttonSelected = 0
+        m.logoutConfirmed = true
+        logout()
+    end if
+    m.logoutDialog.close = true
+end sub
+
+sub onLogoutDialogClosed()
+    m.top.dialog = invalid
+    if not m.logoutConfirmed and m.logoutButton.visible
+        m.logoutButton.setFocus(true)
+    end if
+end sub
+
+sub logout()
+    m.authRequestId = m.authRequestId + 1
+    m.jwtToken = ""
+    m.activeJwtTask = invalid
+    m.getRecordingsTask.control = "stop"
+    m.top.serverUrl = ""
+    m.top.username = ""
+    m.top.password = ""
+
+    registry = CreateObject("roRegistrySection", "DispatcharrRoku")
+    registry.delete("serverUrl")
+    registry.delete("username")
+    registry.delete("password")
+    registry.flush()
+
+    if m.video.visible
+        m.video.control = "stop"
+        m.video.visible = false
+    end if
+    showSignInScreen("")
 end sub
 
 sub onState()
@@ -133,22 +234,27 @@ function onKeyEvent(key as string, press as boolean) as boolean
         return false
     end if
 
-    ' BACK while playing
     if m.video.visible
         if key = "back"
             m.video.control = "stop"
-
             m.video.visible = false
-
             m.title.visible = true
             m.list.visible = true
-
+            m.logoutButton.visible = true
             m.list.setFocus(true)
-
             return true
         end if
-
         return false
+    end if
+
+    if key = "right" and m.list.hasFocus()
+        m.logoutButton.setFocus(true)
+        return true
+    end if
+
+    if (key = "left" or key = "down") and m.logoutButton.hasFocus()
+        m.list.setFocus(true)
+        return true
     end if
 
     return false

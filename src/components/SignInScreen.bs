@@ -1,152 +1,152 @@
 sub init()
-    m.top.observeField("setup","setupSignInPage")
-    m.signInButton = m.top.findNode("signInButton")
     m.serverUrlField = m.top.findNode("signinURL")
     m.usernameField = m.top.findNode("signinUsername")
     m.passwordField = m.top.findNode("signinPassword")
-    m.keyboardDialog = m.top.findNode("signinKeyboard")
-    m.keyboardDialog.observeFieldScoped("buttonSelected", "dismissDialog")
-    m.keyboardDialog.observeFieldScoped("text", "handleTextEdit")
+    m.signInButton = m.top.findNode("signInButton")
+    m.errorLabel = m.top.findNode("signInError")
+    m.fieldFocusBorder = m.top.findNode("fieldFocusBorder")
 
-    m.signInButton.observeField("buttonSelected", "onSignInButtonSelected")
-
-    m.selectedObj = "url"
+    m.top.observeField("activationId", "onActivated")
+    m.top.observeField("errorMessage", "onErrorMessageChanged")
+    m.signInButton.observeField("buttonSelected", "submitCredentials")
+    m.selectedField = "serverUrl"
 end sub
 
-sub setupSignInPage()
+sub onActivated()
+    m.serverUrlField.text = m.top.serverUrl
+    m.usernameField.text = m.top.username
+    m.passwordField.text = m.top.password
+    m.errorLabel.text = m.top.errorMessage
+    m.top.isSubmitting = false
+
     if m.serverUrlField.text = ""
-        m.serverUrlField.setFocus(true)
+        m.selectedField = "serverUrl"
     else if m.usernameField.text = ""
-        m.selectedObj = "username"
-        m.usernameField.setFocus(true)
-    else if m.passwordField = ""
-        m.selectedObj = "password"
-        m.passwordField.setFocus(true)
+        m.selectedField = "username"
+    else if m.passwordField.text = ""
+        m.selectedField = "password"
+    else
+        m.selectedField = "serverUrl"
     end if
+
+    focusSelectedField()
 end sub
 
-sub setUpEditServerUrl()
-    m.keyboardDialog.textEditBox.secureMode = false
-    m.keyboardDialog.keyboardDomain = "generic"
-    m.keyboardDialog.title = "Dispatcharr URL entry"
-    m.keyboardDialog.message = ["Enter your Dispatcharr server URL"]
-    m.keyboardDialog.buttons = ["OK"]
-    m.keyboardDialog.textEditBox.hintText = "Enter a valid URL..."
-    m.keyboardDialog.textEditBox.setFocus(true)
-    m.keyboardDialog.text = m.serverUrlField.text
+sub onErrorMessageChanged()
+    m.errorLabel.text = m.top.errorMessage
 end sub
 
-sub setUpEditUsername()
-    m.keyboardDialog.textEditBox.secureMode = false
-    m.keyboardDialog.keyboardDomain = "alphanumeric"
-    m.keyboardDialog.title = "Username entry"
-    m.keyboardDialog.message = ["Enter your Dispatcharr username"]
-    m.keyboardDialog.buttons = ["OK"]
-    m.keyboardDialog.textEditBox.hintText = "Enter a valid username..."
-    m.keyboardDialog.textEditBox.setFocus(true)
-    m.keyboardDialog.text = m.usernameField.text
-end sub
-
-sub setupEditPassword()
-    m.keyboardDialog.keyboardDomain = "password"
-    m.keyboardDialog.textEditBox.secureMode = true
-
-    m.keyboardDialog.title = "Password entry"
-    m.keyboardDialog.message = ["The password is 8 or more characters"]
-    m.keyboardDialog.buttons = ["OK"]
-    m.keyboardDialog.textEditBox.hintText = "Create or enter a password..."
-    m.keyboardDialog.textEditBox.setFocus(true)
-    m.keyboardDialog.text = m.passwordField.text
-end sub
-
-sub handleTextEdit()
-    if m.selectedObj = "url"
-        m.serverUrlField.text = m.keyboardDialog.text
-    else if m.selectedObj = "password"
-        m.passwordField.text = m.keyboardDialog.text
-    else if m.selectedObj = "username"
-        m.usernameField.text = m.keyboardDialog.text
-    end if
-end sub
-
-sub dismissDialog()
-    m.keyboardDialog.close = true
-
-    if m.selectedObj = "url"
+sub focusSelectedField()
+    if m.selectedField = "serverUrl"
+        m.fieldFocusBorder.visible = true
+        m.fieldFocusBorder.translation = [492,332]
         m.serverUrlField.setFocus(true)
-    else if m.selectedObj = "password"
-        m.passwordField.setFocus(true)
-    else if m.selectedObj = "username"
+    else if m.selectedField = "username"
+        m.fieldFocusBorder.visible = true
+        m.fieldFocusBorder.translation = [492,477]
         m.usernameField.setFocus(true)
+    else if m.selectedField = "password"
+        m.fieldFocusBorder.visible = true
+        m.fieldFocusBorder.translation = [492,622]
+        m.passwordField.setFocus(true)
+    else
+        m.fieldFocusBorder.visible = false
+        m.signInButton.setFocus(true)
+    end if
+end sub
+
+sub showKeyboard()
+    m.keyboardDialog = createObject("roSGNode", "StandardKeyboardDialog")
+    m.keyboardDialog.width = 0
+    m.keyboardDialog.height = 0
+    m.keyboardDialog.buttons = ["Done"]
+    m.keyboardDialog.observeFieldScoped("buttonSelected", "onKeyboardDone")
+    m.keyboardDialog.observeFieldScoped("wasClosed", "onKeyboardClosed")
+
+    if m.selectedField = "serverUrl"
+        m.keyboardDialog.title = "Dispatcharr server URL"
+        m.keyboardDialog.keyboardDomain = "generic"
+        m.keyboardDialog.text = m.serverUrlField.text
+        m.keyboardDialog.textEditBox.secureMode = false
+    else if m.selectedField = "username"
+        m.keyboardDialog.title = "Username"
+        m.keyboardDialog.keyboardDomain = "alphanumeric"
+        m.keyboardDialog.text = m.usernameField.text
+        m.keyboardDialog.textEditBox.secureMode = false
+    else
+        m.keyboardDialog.title = "Password"
+        m.keyboardDialog.keyboardDomain = "password"
+        m.keyboardDialog.text = m.passwordField.text
+        m.keyboardDialog.textEditBox.secureMode = true
+        m.keyboardDialog.textEditBox.secureLastCharacter = true
     end if
 
-    m.keyboardDialog.visible = false
-end sub
-
-sub onSignInButtonSelected()
-    returnToMainScene()
-end sub
-
-sub returnToMainScene()
     scene = m.top.getScene()
-    scene.serverUrl = m.serverUrlField.text
-    scene.username = m.usernameField.text
-    scene.password = m.passwordField.text
-    m.top.visible = false
-    scene.signInComplete = true
+    scene.dialog = m.keyboardDialog
+    m.keyboardDialog.setFocus(true)
+end sub
+
+sub onKeyboardDone()
+    if m.selectedField = "serverUrl"
+        m.serverUrlField.text = m.keyboardDialog.text
+    else if m.selectedField = "username"
+        m.usernameField.text = m.keyboardDialog.text
+    else
+        m.passwordField.text = m.keyboardDialog.text
+    end if
+
+    m.keyboardDialog.close = true
+end sub
+
+sub onKeyboardClosed()
+    scene = m.top.getScene()
+    scene.dialog = invalid
+    focusSelectedField()
+end sub
+
+sub submitCredentials()
+    if m.serverUrlField.text = "" or m.usernameField.text = "" or m.passwordField.text = ""
+        m.top.errorMessage = "Enter a server URL, username, and password."
+        return
+    end if
+
+    m.top.serverUrl = m.serverUrlField.text
+    m.top.username = m.usernameField.text
+    m.top.password = m.passwordField.text
+    m.top.errorMessage = ""
+    m.top.isSubmitting = true
+    m.top.submissionId = m.top.submissionId + 1
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
-    handled = false
-
-    if press 
-        if key = "back" 
-            returnToMainScene()
-        else if key = "down"
-            if m.selectedObj = "url"
-                m.passwordField.active = false
-                m.usernameField.setFocus(true)
-                m.usernameField.active = true
-                m.selectedObj = "username"
-            else if m.selectedObj = "username"
-                m.usernameField.active = false
-                m.passwordField.setFocus(true)
-                m.passwordField.active = true
-                m.selectedObj = "password"
-            else if m.selectedObj = "password"
-                m.passwordField.active = false
-                m.signInButton.setFocus(true)
-                m.selectedObj = "button"
-            end if
-        else if key = "up"
-            if m.selectedObj = "username"
-                m.usernameField.active = false
-                m.serverUrlField.setFocus(true)
-                m.serverUrlField.active = true
-                m.selectedObj = "url"
-            else if m.selectedObj = "password"
-                m.passwordField.active = false
-                m.usernameField.setFocus(true)
-                m.usernameField.active = true
-                m.selectedObj = "username"
-            else if m.selectedObj = "button"
-                m.passwordField.setFocus(true)
-                m.passwordField.active = true
-                m.selectedObj = "password"
-            end if
-        else if key = "OK"
-            if m.selectedObj = "url"
-                setUpEditServerUrl()
-            else if m.selectedObj = "password"
-                setupEditPassword()
-            else if m.selectedObj = "username"
-                setUpEditUsername()
-            end if
-
-            m.keyboardDialog.visible = true
-            m.keyboardDialog.setFocus(true)
-        end if
+    if not press or m.top.isSubmitting
+        return m.top.isSubmitting
     end if
 
-    return handled
+    if key = "down"
+        if m.selectedField = "serverUrl"
+            m.selectedField = "username"
+        else if m.selectedField = "username"
+            m.selectedField = "password"
+        else if m.selectedField = "password"
+            m.selectedField = "button"
+        end if
+        focusSelectedField()
+        return true
+    else if key = "up"
+        if m.selectedField = "button"
+            m.selectedField = "password"
+        else if m.selectedField = "password"
+            m.selectedField = "username"
+        else if m.selectedField = "username"
+            m.selectedField = "serverUrl"
+        end if
+        focusSelectedField()
+        return true
+    else if key = "OK" and m.selectedField <> "button"
+        showKeyboard()
+        return true
+    end if
+
+    return false
 end function

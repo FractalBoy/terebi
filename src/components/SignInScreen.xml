@@ -1,23 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="SignInScreen" extends="Group">
   <interface>
-    <field id="setup" type="boolean" />
+    <field id="activationId" type="integer" />
+    <field id="submissionId" type="integer" />
     <field id="serverUrl" type="string" />
     <field id="username" type="string" />
     <field id="password" type="string" />
+    <field id="errorMessage" type="string" />
+    <field id="isSubmitting" type="boolean" />
   </interface>
-
   <children>
-    <Label id="SignInTitle" height="50" width="600" text="Sign in to your account"
-      translation="[120,205]" font="font:LargeBoldSystemFont" />
-    <TextEditBox id="SigninURL" height="50" width="600" translation="[100,240]"
-      clearOnDownKey="false" hintText="Enter Dispatcharr URL" />
-    <TextEditBox id="SigninUsername" height="50" width="600" translation="[100,295]"
-      clearOnDownKey="false" hintText="Enter username" />
-    <TextEditBox id="SigninPassword" height="50" width="600" translation="[100,345]"
-      clearOnDownKey="false" secureMode="true" hintText="Enter user password" />
-    <Button id="signInButton" text="Sign In" visible="true" showFocusFootprint="true" minWidth="140"
-      height="72" iconUri="" focusedIconUri="" translation="[100,410]" />
-    <StandardKeyboardDialog id="signinKeyboard" width="1020" height="565" visible="false" />
+    <Label id="signInTitle" text="Sign in to Dispatcharr" translation="[500,150]" width="920" height="56" font="font:LargeBoldSystemFont" horizAlign="center" />
+    <Label id="signInError" translation="[500,220]" width="920" height="34" horizAlign="center" color="0xffff6b6b" />
+    <Group id="fieldFocusBorder" translation="[492,332]">
+      <Rectangle width="936" height="3" color="0xffffffff" />
+      <Rectangle translation="[0,81]" width="936" height="3" color="0xffffffff" />
+      <Rectangle width="3" height="84" color="0xffffffff" />
+      <Rectangle translation="[933,0]" width="3" height="84" color="0xffffffff" />
+    </Group>
+    <Label text="Dispatcharr server URL" translation="[500,290]" width="920" height="30" />
+    <TextEditBox id="signinURL" translation="[500,340]" width="920" height="72" hintText="https://dispatcharr.example" clearOnDownKey="false" />
+    <Label text="Username" translation="[500,435]" width="920" height="30" />
+    <TextEditBox id="signinUsername" translation="[500,485]" width="920" height="72" hintText="Enter username" clearOnDownKey="false" />
+    <Label text="Password" translation="[500,580]" width="920" height="30" />
+    <TextEditBox id="signinPassword" translation="[500,630]" width="920" height="72" hintText="Enter password" secureMode="true" leadingEllipsis="true" clearOnDownKey="false" />
+    <Button id="signInButton" text="Sign In" translation="[500,750]" minWidth="220" height="72" showFocusFootprint="true" />
   </children>
 </component>
