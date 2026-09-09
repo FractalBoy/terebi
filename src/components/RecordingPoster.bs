@@ -17,14 +17,15 @@ sub showContent()
     m.title.text = m.top.itemContent.title
     m.subtitle.text = m.top.itemContent.secondaryTitle
     status = m.top.itemContent.recordingStatus
-    if status = "recording"
+    remuxSuccess = m.top.itemContent.remuxSuccess
+    if status = "recording" or (status = "stopped" and not remuxSuccess)
         m.statusIcon.text = "●"
         m.statusText.text = "LIVE"
         m.statusIcon.color = "0xff5a5aff"
         m.statusBackground.color = "0x132238ee"
         m.statusBackground.width = 140
         m.statusText.width = 96
-    else if status = "completed"
+    else if status = "completed" or (status = "stopped" and remuxSuccess)
         m.statusIcon.text = "✓"
         m.statusText.text = "RECORDED"
         m.statusIcon.color = "0x7dd3fcff"

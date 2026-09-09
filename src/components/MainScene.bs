@@ -151,12 +151,13 @@ sub onRecordingsReturned()
     content = CreateObject("roSGNode", "ContentNode")
     for each recording in m.recordings
         item = content.createChild("ContentNode")
-        item.addFields({ posterUrl: "string", recordingStatus: "string", programStart: "string", programEnd: "string" })
+        item.addFields({ posterUrl: "", recordingStatus: "", programStart: "", programEnd: "", remuxSuccess: false })
         item.title = recording.custom_properties.program.title
         item.secondaryTitle = recording.custom_properties.program.sub_title
         item.description = recording.custom_properties.program.description
         item.posterUrl = recording.custom_properties.poster_url
         item.recordingStatus = recording.custom_properties.status
+        item.remuxSuccess = recording.custom_properties.remux_success
         item.programStart = recording.custom_properties.program.start_time
         item.programEnd = recording.custom_properties.program.end_time
     end for
@@ -182,7 +183,7 @@ sub showRecordingDetails(index as integer)
     status = m.recordings[index].custom_properties.status
     if status = "recording"
         m.detailsStatus.text = "●  IN PROGRESS"
-    else if status = "completed"
+    else if status = "completed" or status = "stopped"
         m.detailsStatus.text = "✓  RECORDED"
     else
         m.detailsStatus.text = "•  STATUS UNKNOWN"
@@ -196,7 +197,16 @@ end sub
 
 function displayDateTime(value as string) as string
     if value = invalid or len(value) < 16 then return "Time unavailable"
-    return left(value, 10) + "  " + mid(value, 12, 5)
+
+    dateTime = CreateObject("roDateTime")
+    dateTime.FromISO8601String(value)
+    dateTime.ToLocalTime()
+    return dateTime.GetYear().toStr() + "-" + padDateTimeValue(dateTime.GetMonth()) + "-" + padDateTimeValue(dateTime.GetDayOfMonth()) + "  " + padDateTimeValue(dateTime.GetHours()) + ":" + padDateTimeValue(dateTime.GetMinutes())
+end function
+
+function padDateTimeValue(value as integer) as string
+    if value < 10 then return "0" + value.toStr()
+    return value.toStr()
 end function
 
 sub hideLibrary()
@@ -234,13 +244,14 @@ sub playRecording()
     content = CreateObject("roSGNode", "ContentNode")
     content.url = mediaUrl
     content.title = recording.custom_properties.program.title
-    if right(mediaUrl, 5) = ".m3u8"
+    if recording.custom_properties.status = "recording" or not recording.custom_properties.remux_success
         content.streamFormat = "hls"
         content.live = true
     else
         content.streamFormat = "mkv"
         content.length = (recording.custom_properties.program.endMs - recording.custom_properties.program.startMs) / 1000
     end if
+
     content.AddHeader("Authorization", "Bearer " + m.jwtToken)
     m.video.content = content
     hideLibrary()
