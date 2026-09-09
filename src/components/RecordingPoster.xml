@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="RecordingPoster" extends="Group">
+    <interface>
+        <field id="itemContent" type="node" onChange="showContent" />
+        <field id="itemHasFocus" type="boolean" onChange="showFocus" />
+    </interface>
+    <children>
+        <Rectangle translation="[4,5]" width="326" height="382" color="0x00000066" />
+        <Rectangle width="326" height="382" color="0x1b2b43ff" />
+        <Poster id="poster" translation="[4,4]" width="318" height="274" loadWidth="318" loadHeight="274" loadDisplayMode="scaleToFit" />
+        <Rectangle translation="[4,226]" width="318" height="52" color="0x0b122099" />
+        <Group translation="[12,12]">
+            <Rectangle id="statusBackground" width="174" height="40" color="0x132238ee" />
+            <Label id="statusIcon" translation="[10,4]" width="24" height="32" font="font:SmallBoldSystemFont" color="0x7dd3fcff" />
+            <Label id="statusText" translation="[36,4]" width="130" height="32" font="font:SmallSystemFont" color="0xf4f8ffff" />
+        </Group>
+        <Label id="title" translation="[12,286]" width="302" height="44" font="font:MediumBoldSystemFont" color="0xf4f8ffff" maxLines="1" />
+        <Label id="subtitle" translation="[12,330]" width="302" height="40" font="font:SmallSystemFont" color="0xa9bad2ff" maxLines="1" />
+        <Group id="focusBorder" visible="false">
+            <Rectangle width="326" height="5" color="0x38bdf8ff" />
+            <Rectangle translation="[0,377]" width="326" height="5" color="0x38bdf8ff" />
+            <Rectangle width="5" height="382" color="0x38bdf8ff" />
+            <Rectangle translation="[321,0]" width="5" height="382" color="0x38bdf8ff" />
+        </Group>
+    </children>
+</component>

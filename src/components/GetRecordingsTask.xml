@@ -5,5 +5,7 @@
         <field id="jwtToken" type="string" />
         <field id="recordingId" type="string" />
         <field id="recordings" type="roArray" />
+        <field id="requestStatus" type="string" value="idle" />
+        <field id="failureMessage" type="string" />
     </interface>
 </component>

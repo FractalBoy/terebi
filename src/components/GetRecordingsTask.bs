@@ -4,6 +4,8 @@ end sub
 
 
 sub getRecordings()
+    m.top.requestStatus = "running"
+    m.top.failureMessage = ""
     xfer = CreateObject("roUrlTransfer")
     url = m.top.serverUrl + "/api/channels/recordings/"
 
@@ -20,12 +22,44 @@ sub getRecordings()
     xfer.addHeader("Authorization", "Bearer " + m.top.jwtToken)
     xfer.addHeader("Accept", "application/json")
 
-    result = xfer.GetToString()
+    port = CreateObject("roMessagePort")
+    xfer.SetMessagePort(port)
+    if not xfer.AsyncGetToString()
+        failRequest("Unable to start the recordings request.")
+        return
+    end if
+
+    msg = wait(0, port)
+    if type(msg) <> "roUrlEvent"
+        failRequest("No recordings response was received from Dispatcharr.")
+        return
+    end if
+
+    responseCode = msg.GetResponseCode()
+    if responseCode < 200 or responseCode >= 300
+        failRequest("Unable to load recordings from Dispatcharr.")
+        return
+    end if
+    result = msg.GetString()
     recordings = ParseJson(result)
+
+    if recordings = invalid
+        failRequest("Dispatcharr returned invalid recordings data.")
+        return
+    end if
 
     if m.top.recordingId <> ""
         recordings = [recordings]
+    else if type(recordings) <> "roArray"
+        failRequest("Dispatcharr did not return a recordings list.")
+        return
     end if
 
     m.top.recordings = recordings
+    m.top.requestStatus = "success"
+end sub
+
+sub failRequest(message as string)
+    m.top.failureMessage = message
+    m.top.requestStatus = "failure"
 end sub

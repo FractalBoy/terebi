@@ -39,15 +39,15 @@ end sub
 sub focusSelectedField()
     if m.selectedField = "serverUrl"
         m.fieldFocusBorder.visible = true
-        m.fieldFocusBorder.translation = [492,332]
+        m.fieldFocusBorder.translation = [492,452]
         m.serverUrlField.setFocus(true)
     else if m.selectedField = "username"
         m.fieldFocusBorder.visible = true
-        m.fieldFocusBorder.translation = [492,477]
+        m.fieldFocusBorder.translation = [492,597]
         m.usernameField.setFocus(true)
     else if m.selectedField = "password"
         m.fieldFocusBorder.visible = true
-        m.fieldFocusBorder.translation = [492,622]
+        m.fieldFocusBorder.translation = [492,742]
         m.passwordField.setFocus(true)
     else
         m.fieldFocusBorder.visible = false

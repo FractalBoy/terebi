@@ -10,20 +10,25 @@
     <field id="isSubmitting" type="boolean" />
   </interface>
   <children>
-    <Label id="signInTitle" text="Sign in to Dispatcharr" translation="[500,150]" width="920" height="56" font="font:LargeBoldSystemFont" horizAlign="center" />
-    <Label id="signInError" translation="[500,220]" width="920" height="34" horizAlign="center" color="0xffff6b6b" />
-    <Group id="fieldFocusBorder" translation="[492,332]">
-      <Rectangle width="936" height="3" color="0xffffffff" />
-      <Rectangle translation="[0,81]" width="936" height="3" color="0xffffffff" />
-      <Rectangle width="3" height="84" color="0xffffffff" />
-      <Rectangle translation="[933,0]" width="3" height="84" color="0xffffffff" />
+    <Rectangle width="1920" height="1080" color="0x0b1220ff" />
+    <Rectangle translation="[410,126]" width="1100" height="820" color="0x132238ff" />
+    <Rectangle translation="[410,126]" width="8" height="820" color="0x38bdf8ff" />
+    <Label text="DISPATCHARR" translation="[500,204]" width="920" height="32" font="font:MediumBoldSystemFont" horizAlign="center" color="0x7dd3fcff" />
+    <Label id="signInTitle" text="Connect your DVR" translation="[500,252]" width="920" height="56" font="font:LargeBoldSystemFont" horizAlign="center" color="0xf4f8ffff" />
+    <Label text="Sign in to browse and play your recordings." translation="[500,314]" width="920" height="32" horizAlign="center" color="0xa9bad2ff" />
+    <Label id="signInError" translation="[500,360]" width="920" height="42" horizAlign="center" color="0xffa4a4ff" wrap="true" />
+    <Group id="fieldFocusBorder" translation="[492,452]">
+      <Rectangle width="936" height="3" color="0x38bdf8ff" />
+      <Rectangle translation="[0,81]" width="936" height="3" color="0x38bdf8ff" />
+      <Rectangle width="3" height="84" color="0x38bdf8ff" />
+      <Rectangle translation="[933,0]" width="3" height="84" color="0x38bdf8ff" />
     </Group>
-    <Label text="Dispatcharr server URL" translation="[500,290]" width="920" height="30" />
-    <TextEditBox id="signinURL" translation="[500,340]" width="920" height="72" hintText="https://dispatcharr.example" clearOnDownKey="false" />
-    <Label text="Username" translation="[500,435]" width="920" height="30" />
-    <TextEditBox id="signinUsername" translation="[500,485]" width="920" height="72" hintText="Enter username" clearOnDownKey="false" />
-    <Label text="Password" translation="[500,580]" width="920" height="30" />
-    <TextEditBox id="signinPassword" translation="[500,630]" width="920" height="72" hintText="Enter password" secureMode="true" leadingEllipsis="true" clearOnDownKey="false" />
-    <Button id="signInButton" text="Sign In" translation="[500,750]" minWidth="220" height="72" showFocusFootprint="true" />
+    <Label text="DISPATCHARR SERVER URL" translation="[500,410]" width="920" height="30" color="0xc7d5e8ff" />
+    <TextEditBox id="signinURL" translation="[500,460]" width="920" height="72" hintText="https://dispatcharr.example" clearOnDownKey="false" />
+    <Label text="USERNAME" translation="[500,555]" width="920" height="30" color="0xc7d5e8ff" />
+    <TextEditBox id="signinUsername" translation="[500,605]" width="920" height="72" hintText="Enter username" clearOnDownKey="false" />
+    <Label text="PASSWORD" translation="[500,700]" width="920" height="30" color="0xc7d5e8ff" />
+    <TextEditBox id="signinPassword" translation="[500,750]" width="920" height="72" hintText="Enter password" secureMode="true" leadingEllipsis="true" clearOnDownKey="false" />
+    <Button id="signInButton" text="Sign In" translation="[500,850]" minWidth="250" height="64" />
   </children>
 </component>

@@ -9,7 +9,7 @@
             "preLaunchTask": "build-dev",
             "stopOnEntry": false,
             "injectRaleTrackerTask": false,
-            "injectRdbOnDeviceComponent": false,
+            "injectRdbOnDeviceComponent": true,
             "host": "${promptForHost}",
             "password": "${promptForPassword}",
         }

@@ -3,29 +3,46 @@ sub init()
     m.authRequestId = 0
     m.isLoggedIn = false
     m.recordings = []
-
-    m.list = m.top.findNode("recordingsList")
+    m.requestMode = ""
+    m.grid = m.top.findNode("recordingsGrid")
     m.topRail = m.top.findNode("topRail")
+    m.libraryTitle = m.top.findNode("libraryTitle")
+    m.libraryHint = m.top.findNode("libraryHint")
+    m.recordingCount = m.top.findNode("recordingCount")
+    m.detailsPanel = m.top.findNode("detailsPanel")
+    m.detailsStatus = m.top.findNode("detailsStatus")
+    m.detailsTitle = m.top.findNode("detailsTitle")
+    m.detailsSubtitle = m.top.findNode("detailsSubtitle")
+    m.detailsTime = m.top.findNode("detailsTime")
+    m.detailsDescription = m.top.findNode("detailsDescription")
+    m.loadingState = m.top.findNode("loadingState")
+    m.emptyState = m.top.findNode("emptyState")
+    m.errorState = m.top.findNode("errorState")
+    m.libraryError = m.top.findNode("libraryError")
+    m.retryButton = m.top.findNode("retryButton")
+    m.errorLogoutButton = m.top.findNode("errorLogoutButton")
     m.dvrButton = m.top.findNode("dvrButton")
+    m.refreshButton = m.top.findNode("refreshButton")
     m.logoutButton = m.top.findNode("logoutButton")
     m.video = m.top.findNode("video")
     m.signInScreen = m.top.findNode("signInScreen")
     m.getRecordingsTask = createObject("roSGNode", "GetRecordingsTask")
 
     m.video.observeField("state", "onState")
-    m.list.observeField("itemSelected", "onRecordingSelected")
+    m.grid.observeField("itemSelected", "onRecordingSelected")
+    m.grid.observeField("itemFocused", "onRecordingFocused")
     m.dvrButton.observeField("buttonSelected", "showDvr")
+    m.refreshButton.observeField("buttonSelected", "requestRecordings")
     m.logoutButton.observeField("buttonSelected", "showLogoutConfirmation")
+    m.retryButton.observeField("buttonSelected", "requestRecordings")
+    m.errorLogoutButton.observeField("buttonSelected", "showLogoutConfirmation")
     m.signInScreen.observeField("submissionId", "onCredentialsSubmitted")
-
-    m.list.visible = false
-    m.topRail.visible = false
+    m.getRecordingsTask.observeField("requestStatus", "onRecordingsRequestStatus")
 
     registry = CreateObject("roRegistrySection", "DispatcharrRoku")
     if registry.exists("serverUrl") then m.top.serverUrl = registry.read("serverUrl")
     if registry.exists("username") then m.top.username = registry.read("username")
     if registry.exists("password") then m.top.password = registry.read("password")
-
     if hasCredentials()
         startAuthentication(false)
     else
@@ -34,19 +51,12 @@ sub init()
 end sub
 
 function hasCredentials() as boolean
-    if m.top.serverUrl = invalid or m.top.serverUrl = ""
-        return false
-    end if
-    if m.top.username = invalid or m.top.username = ""
-        return false
-    end if
-    return m.top.password <> invalid and m.top.password <> ""
+    return m.top.serverUrl <> invalid and m.top.serverUrl <> "" and m.top.username <> invalid and m.top.username <> "" and m.top.password <> invalid and m.top.password <> ""
 end function
 
 sub showSignInScreen(errorMessage as string)
     m.isLoggedIn = false
-    m.list.visible = false
-    m.topRail.visible = false
+    hideLibrary()
     m.signInScreen.serverUrl = m.top.serverUrl
     m.signInScreen.username = m.top.username
     m.signInScreen.password = m.top.password
@@ -65,7 +75,7 @@ end sub
 sub startAuthentication(saveOnSuccess as boolean)
     m.authRequestId = m.authRequestId + 1
     m.saveCredentialsOnSuccess = saveOnSuccess
-
+    m.signInScreen.isSubmitting = true
     m.activeJwtTask = createObject("roSGNode", "GetJwtTokenTask")
     m.activeJwtTask.serverUrl = m.top.serverUrl
     m.activeJwtTask.username = m.top.username
@@ -76,13 +86,9 @@ sub startAuthentication(saveOnSuccess as boolean)
 end sub
 
 sub onJwtAuthenticationChanged()
-    if m.activeJwtTask = invalid
+    if m.activeJwtTask = invalid or m.activeJwtTask.requestId <> m.authRequestId
         return
     end if
-    if m.activeJwtTask.requestId <> m.authRequestId
-        return
-    end if
-
     if m.activeJwtTask.authStatus = "success"
         m.jwtToken = m.activeJwtTask.jwtToken
         if m.saveCredentialsOnSuccess
@@ -92,18 +98,21 @@ sub onJwtAuthenticationChanged()
             registry.write("password", m.top.password)
             registry.flush()
         end if
-
         m.isLoggedIn = true
         m.signInScreen.visible = false
         m.signInScreen.isSubmitting = false
         requestRecordings()
     else if m.activeJwtTask.authStatus = "failure"
         m.jwtToken = ""
-        showSignInScreen("Unable to sign in. Check your server URL, username, and password.")
+        showSignInScreen(m.activeJwtTask.failureMessage)
     end if
 end sub
 
 sub requestRecordings()
+    if not m.isLoggedIn then return
+    m.requestMode = "library"
+    hideLibrary()
+    m.loadingState.visible = true
     m.getRecordingsTask.serverUrl = m.top.serverUrl
     m.getRecordingsTask.jwtToken = m.jwtToken
     m.getRecordingsTask.recordingId = ""
@@ -111,42 +120,105 @@ sub requestRecordings()
     m.getRecordingsTask.control = "run"
 end sub
 
+sub onRecordingsRequestStatus()
+    if m.getRecordingsTask.requestStatus <> "failure" then return
+    if m.requestMode = "library"
+        m.getRecordingsTask.unobserveField("recordings")
+        m.loadingState.visible = false
+        m.errorState.visible = true
+        m.topRail.visible = true
+        m.libraryError.text = m.getRecordingsTask.failureMessage
+        m.retryButton.setFocus(true)
+    else if m.requestMode = "playback"
+        showPlaybackError(m.getRecordingsTask.failureMessage)
+    end if
+end sub
+
 sub onRecordingsReturned()
     m.getRecordingsTask.unobserveField("recordings")
-    if not m.isLoggedIn
+    if not m.isLoggedIn then return
+    if m.requestMode = "playback"
+        playRecording()
         return
     end if
-
-    content = CreateObject("roSGNode", "ContentNode")
     m.recordings = m.getRecordingsTask.recordings
-
+    m.loadingState.visible = false
+    m.topRail.visible = true
+    if m.recordings.count() = 0
+        m.emptyState.visible = true
+        return
+    end if
+    content = CreateObject("roSGNode", "ContentNode")
     for each recording in m.recordings
         item = content.createChild("ContentNode")
+        item.addFields({ posterUrl: "string", recordingStatus: "string", programStart: "string", programEnd: "string" })
         item.title = recording.custom_properties.program.title
-        item.secondarytitle = recording.custom_properties.program.sub_title
+        item.secondaryTitle = recording.custom_properties.program.sub_title
         item.description = recording.custom_properties.program.description
+        item.posterUrl = recording.custom_properties.poster_url
+        item.recordingStatus = recording.custom_properties.status
+        item.programStart = recording.custom_properties.program.start_time
+        item.programEnd = recording.custom_properties.program.end_time
     end for
+    m.recordingCount.text = m.recordings.count().toStr() + " recordings"
+    m.grid.content = content
+    m.grid.visible = true
+    m.libraryTitle.visible = true
+    m.libraryHint.visible = true
+    m.grid.setFocus(true)
+    showRecordingDetails(0)
+end sub
 
-    m.list.content = content
-    m.list.visible = true
-    m.topRail.visible = true
-    m.list.setFocus(true)
+sub onRecordingFocused()
+    if m.grid.visible then showRecordingDetails(m.grid.itemFocused)
+end sub
+
+sub showRecordingDetails(index as integer)
+    if index < 0 or index >= m.recordings.count()
+        m.detailsPanel.visible = false
+        return
+    end if
+    program = m.recordings[index].custom_properties.program
+    status = m.recordings[index].custom_properties.status
+    if status = "recording"
+        m.detailsStatus.text = "●  IN PROGRESS"
+    else if status = "completed"
+        m.detailsStatus.text = "✓  RECORDED"
+    else
+        m.detailsStatus.text = "•  STATUS UNKNOWN"
+    end if
+    m.detailsTitle.text = program.title
+    m.detailsSubtitle.text = program.sub_title
+    m.detailsTime.text = displayDateTime(program.start_time) + "  —  " + displayDateTime(program.end_time)
+    m.detailsDescription.text = program.description
+    m.detailsPanel.visible = true
+end sub
+
+function displayDateTime(value as string) as string
+    if value = invalid or len(value) < 16 then return "Time unavailable"
+    return left(value, 10) + "  " + mid(value, 12, 5)
+end function
+
+sub hideLibrary()
+    m.grid.visible = false
+    m.topRail.visible = false
+    m.libraryTitle.visible = false
+    m.libraryHint.visible = false
+    m.detailsPanel.visible = false
+    m.loadingState.visible = false
+    m.emptyState.visible = false
+    m.errorState.visible = false
 end sub
 
 sub showDvr()
-    if m.list.visible
-        m.list.setFocus(true)
-    end if
+    if m.grid.visible then m.grid.setFocus(true)
 end sub
 
 sub onRecordingSelected()
-    index = m.list.itemSelected
-    if index < 0 or index >= m.recordings.count()
-        return
-    end if
-
-    recording = m.recordings[index]
-    m.getRecordingsTask.recordingId = recording.id.ToStr()
+    index = m.grid.itemSelected
+    if index < 0 or index >= m.recordings.count() then return
+    m.requestMode = "playback"
+    m.getRecordingsTask.recordingId = m.recordings[index].id.toStr()
     m.getRecordingsTask.observeField("recordings", "playRecording")
     m.getRecordingsTask.control = "run"
 end sub
@@ -154,31 +226,42 @@ end sub
 sub playRecording()
     m.getRecordingsTask.unobserveField("recordings")
     if not m.isLoggedIn or m.getRecordingsTask.recordings.count() = 0
+        showPlaybackError("The selected recording is no longer available.")
         return
     end if
-
     recording = m.getRecordingsTask.recordings[0]
-    title = recording.custom_properties.program.title
-    hlsUrl = m.top.serverUrl + recording.custom_properties.file_url
+    mediaUrl = m.top.serverUrl + recording.custom_properties.file_url
     content = CreateObject("roSGNode", "ContentNode")
-    content.url = hlsUrl
-    content.title = title
-
-    if right(hlsUrl, 5) = ".m3u8"
+    content.url = mediaUrl
+    content.title = recording.custom_properties.program.title
+    if right(mediaUrl, 5) = ".m3u8"
         content.streamFormat = "hls"
         content.live = true
     else
         content.streamFormat = "mkv"
         content.length = (recording.custom_properties.program.endMs - recording.custom_properties.program.startMs) / 1000
     end if
-
     content.AddHeader("Authorization", "Bearer " + m.jwtToken)
     m.video.content = content
-    m.list.visible = false
-    m.topRail.visible = false
+    hideLibrary()
     m.video.visible = true
     m.video.setFocus(true)
     m.video.control = "play"
+end sub
+
+sub showPlaybackError(message as string)
+    m.playbackErrorDialog = createObject("roSGNode", "StandardMessageDialog")
+    m.playbackErrorDialog.title = "Playback unavailable"
+    m.playbackErrorDialog.message = [message]
+    m.playbackErrorDialog.buttons = ["Back to library"]
+    m.playbackErrorDialog.observeFieldScoped("buttonSelected", "closePlaybackError")
+    m.top.dialog = m.playbackErrorDialog
+end sub
+
+sub closePlaybackError()
+    m.playbackErrorDialog.close = true
+    m.top.dialog = invalid
+    requestRecordings()
 end sub
 
 sub showLogoutConfirmation()
@@ -202,9 +285,7 @@ end sub
 
 sub onLogoutDialogClosed()
     m.top.dialog = invalid
-    if not m.logoutConfirmed and m.topRail.visible
-        m.logoutButton.setFocus(true)
-    end if
+    if not m.logoutConfirmed and m.topRail.visible then m.logoutButton.setFocus(true)
 end sub
 
 sub logout()
@@ -215,13 +296,11 @@ sub logout()
     m.top.serverUrl = ""
     m.top.username = ""
     m.top.password = ""
-
     registry = CreateObject("roRegistrySection", "DispatcharrRoku")
     registry.delete("serverUrl")
     registry.delete("username")
     registry.delete("password")
     registry.flush()
-
     if m.video.visible
         m.video.control = "stop"
         m.video.visible = false
@@ -230,54 +309,58 @@ sub logout()
 end sub
 
 sub onState()
-    ? m.video.state
+    print m.video.state
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
-    if not press
-        return false
-    end if
-
+    if not press then return false
     if m.video.visible
         if key = "back"
             m.video.control = "stop"
             m.video.visible = false
-            m.list.visible = true
+            m.grid.visible = true
             m.topRail.visible = true
-            m.list.setFocus(true)
+            m.libraryTitle.visible = true
+            m.libraryHint.visible = true
+            showRecordingDetails(m.grid.itemFocused)
+            m.grid.setFocus(true)
             return true
         end if
         return false
     end if
-
-    if key = "up" and m.list.hasFocus()
+    if key = "up" and m.grid.hasFocus()
         m.dvrButton.setFocus(true)
         return true
     end if
-
     if m.dvrButton.hasFocus()
-        if key = "left"
-            m.logoutButton.setFocus(true)
+        if key = "right"
+            m.refreshButton.setFocus(true)
             return true
-        end if
-
-        if key = "down"
-            m.list.setFocus(true)
+        else if key = "down"
+            m.grid.setFocus(true)
             return true
         end if
     end if
-
-    if m.logoutButton.hasFocus()
-        if key = "right"
+    if m.refreshButton.hasFocus()
+        if key = "left"
             m.dvrButton.setFocus(true)
             return true
-        end if
-
-        if key = "down"
-            m.list.setFocus(true)
+        else if key = "right"
+            m.logoutButton.setFocus(true)
+            return true
+        else if key = "down"
+            m.grid.setFocus(true)
             return true
         end if
     end if
-
+    if m.logoutButton.hasFocus()
+        if key = "left"
+            m.refreshButton.setFocus(true)
+            return true
+        else if key = "down"
+            m.grid.setFocus(true)
+            return true
+        end if
+    end if
     return false
 end function
