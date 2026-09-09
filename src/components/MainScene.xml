@@ -10,7 +10,7 @@
         <Rectangle translation="[0,112]" width="1920" height="2" color="0x1c3150ff" />
         <Group id="topRail" visible="false">
             <Rectangle width="1920" height="112" color="0x101b2dff" />
-            <Label text="DISPATCHARR" translation="[70,23]" width="410" height="34" font="font:MediumBoldSystemFont" color="0x7dd3fcff" />
+            <Label text="TEREBI" translation="[70,23]" width="410" height="34" font="font:MediumBoldSystemFont" color="0x7dd3fcff" />
             <Label text="DVR LIBRARY" translation="[70,58]" width="410" height="28" font="font:SmallSystemFont" color="0xa9bad2ff" />
             <Label id="recordingCount" translation="[760,42]" width="400" height="35" font="font:MediumBoldSystemFont" horizAlign="center" color="0xf4f8ffff" /> 
             <LayoutGroup translation="[1200,25]" layoutDirection="horiz">

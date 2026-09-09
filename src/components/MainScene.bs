@@ -39,7 +39,7 @@ sub init()
     m.signInScreen.observeField("submissionId", "onCredentialsSubmitted")
     m.getRecordingsTask.observeField("requestStatus", "onRecordingsRequestStatus")
 
-    registry = CreateObject("roRegistrySection", "DispatcharrRoku")
+    registry = CreateObject("roRegistrySection", "Terebi")
     if registry.exists("serverUrl") then m.top.serverUrl = registry.read("serverUrl")
     if registry.exists("username") then m.top.username = registry.read("username")
     if registry.exists("password") then m.top.password = registry.read("password")
@@ -92,7 +92,7 @@ sub onJwtAuthenticationChanged()
     if m.activeJwtTask.authStatus = "success"
         m.jwtToken = m.activeJwtTask.jwtToken
         if m.saveCredentialsOnSuccess
-            registry = CreateObject("roRegistrySection", "DispatcharrRoku")
+            registry = CreateObject("roRegistrySection", "Terebi")
             registry.write("serverUrl", m.top.serverUrl)
             registry.write("username", m.top.username)
             registry.write("password", m.top.password)
@@ -307,7 +307,7 @@ sub logout()
     m.top.serverUrl = ""
     m.top.username = ""
     m.top.password = ""
-    registry = CreateObject("roRegistrySection", "DispatcharrRoku")
+    registry = CreateObject("roRegistrySection", "Terebi")
     registry.delete("serverUrl")
     registry.delete("username")
     registry.delete("password")

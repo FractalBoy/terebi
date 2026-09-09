@@ -1,4 +1,4 @@
-# Dispatcharr Client for Roku
+# Terebi - Dispatcharr Client for Roku
 
 Right now this is a rudimentary app that can just list Dispatcharr
 recordings and play them back.

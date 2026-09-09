@@ -13,7 +13,7 @@
     <Rectangle width="1920" height="1080" color="0x0b1220ff" />
     <Rectangle translation="[410,126]" width="1100" height="820" color="0x132238ff" />
     <Rectangle translation="[410,126]" width="8" height="820" color="0x38bdf8ff" />
-    <Label text="DISPATCHARR" translation="[500,204]" width="920" height="32" font="font:MediumBoldSystemFont" horizAlign="center" color="0x7dd3fcff" />
+    <Label text="TEREBI" translation="[500,204]" width="920" height="32" font="font:MediumBoldSystemFont" horizAlign="center" color="0x7dd3fcff" />
     <Label id="signInTitle" text="Connect your DVR" translation="[500,252]" width="920" height="56" font="font:LargeBoldSystemFont" horizAlign="center" color="0xf4f8ffff" />
     <Label text="Sign in to browse and play your recordings." translation="[500,314]" width="920" height="32" horizAlign="center" color="0xa9bad2ff" />
     <Label id="signInError" translation="[500,360]" width="920" height="42" horizAlign="center" color="0xffa4a4ff" wrap="true" />
@@ -24,7 +24,7 @@
       <Rectangle translation="[933,0]" width="3" height="84" color="0x38bdf8ff" />
     </Group>
     <Label text="DISPATCHARR SERVER URL" translation="[500,410]" width="920" height="30" color="0xc7d5e8ff" />
-    <TextEditBox id="signinURL" translation="[500,460]" width="920" height="72" hintText="https://dispatcharr.example" clearOnDownKey="false" />
+    <TextEditBox id="signinURL" translation="[500,460]" width="920" height="72" hintText="https://dispatcharr.example.com" clearOnDownKey="false" />
     <Label text="USERNAME" translation="[500,555]" width="920" height="30" color="0xc7d5e8ff" />
     <TextEditBox id="signinUsername" translation="[500,605]" width="920" height="72" hintText="Enter username" clearOnDownKey="false" />
     <Label text="PASSWORD" translation="[500,700]" width="920" height="30" color="0xc7d5e8ff" />
