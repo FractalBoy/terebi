@@ -6,10 +6,13 @@
         <field id="password" type="string" />
     </interface>
     <children>
-        <Label id="title" text="Dispatcharr DVR" translation="[70,45]"
-            font="font:LargeBoldSystemFont" />
-        <Button id="logoutButton" text="Log out" translation="[1640,40]" minWidth="180"
-            height="64" visible="false" showFocusFootprint="true" />
+        <Group id="topRail" visible="false">
+            <Rectangle width="1920" height="112" color="0xff1b1b1b" />
+            <Button id="logoutButton" text="Log out" translation="[24,20]" minWidth="180"
+                height="64" showFocusFootprint="true" />
+            <Button id="dvrButton" text="DVR" translation="[870,20]" minWidth="180"
+                height="64" showFocusFootprint="true" />
+        </Group>
         <LabelList id="recordingsList" translation="[70,150]" itemSize="[1100,65]" numRows="8"
             focusable="true" />
         <Video id="video" visible="false" />

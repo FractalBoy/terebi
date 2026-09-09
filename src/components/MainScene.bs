@@ -5,7 +5,8 @@ sub init()
     m.recordings = []
 
     m.list = m.top.findNode("recordingsList")
-    m.title = m.top.findNode("title")
+    m.topRail = m.top.findNode("topRail")
+    m.dvrButton = m.top.findNode("dvrButton")
     m.logoutButton = m.top.findNode("logoutButton")
     m.video = m.top.findNode("video")
     m.signInScreen = m.top.findNode("signInScreen")
@@ -13,12 +14,12 @@ sub init()
 
     m.video.observeField("state", "onState")
     m.list.observeField("itemSelected", "onRecordingSelected")
+    m.dvrButton.observeField("buttonSelected", "showDvr")
     m.logoutButton.observeField("buttonSelected", "showLogoutConfirmation")
     m.signInScreen.observeField("submissionId", "onCredentialsSubmitted")
 
-    m.title.visible = false
     m.list.visible = false
-    m.logoutButton.visible = false
+    m.topRail.visible = false
 
     registry = CreateObject("roRegistrySection", "DispatcharrRoku")
     if registry.exists("serverUrl") then m.top.serverUrl = registry.read("serverUrl")
@@ -44,9 +45,8 @@ end function
 
 sub showSignInScreen(errorMessage as string)
     m.isLoggedIn = false
-    m.title.visible = false
     m.list.visible = false
-    m.logoutButton.visible = false
+    m.topRail.visible = false
     m.signInScreen.serverUrl = m.top.serverUrl
     m.signInScreen.username = m.top.username
     m.signInScreen.password = m.top.password
@@ -128,10 +128,15 @@ sub onRecordingsReturned()
     end for
 
     m.list.content = content
-    m.title.visible = true
     m.list.visible = true
-    m.logoutButton.visible = true
+    m.topRail.visible = true
     m.list.setFocus(true)
+end sub
+
+sub showDvr()
+    if m.list.visible
+        m.list.setFocus(true)
+    end if
 end sub
 
 sub onRecordingSelected()
@@ -169,9 +174,8 @@ sub playRecording()
 
     content.AddHeader("Authorization", "Bearer " + m.jwtToken)
     m.video.content = content
-    m.title.visible = false
     m.list.visible = false
-    m.logoutButton.visible = false
+    m.topRail.visible = false
     m.video.visible = true
     m.video.setFocus(true)
     m.video.control = "play"
@@ -198,7 +202,7 @@ end sub
 
 sub onLogoutDialogClosed()
     m.top.dialog = invalid
-    if not m.logoutConfirmed and m.logoutButton.visible
+    if not m.logoutConfirmed and m.topRail.visible
         m.logoutButton.setFocus(true)
     end if
 end sub
@@ -238,23 +242,41 @@ function onKeyEvent(key as string, press as boolean) as boolean
         if key = "back"
             m.video.control = "stop"
             m.video.visible = false
-            m.title.visible = true
             m.list.visible = true
-            m.logoutButton.visible = true
+            m.topRail.visible = true
             m.list.setFocus(true)
             return true
         end if
         return false
     end if
 
-    if key = "right" and m.list.hasFocus()
-        m.logoutButton.setFocus(true)
+    if key = "up" and m.list.hasFocus()
+        m.dvrButton.setFocus(true)
         return true
     end if
 
-    if (key = "left" or key = "down") and m.logoutButton.hasFocus()
-        m.list.setFocus(true)
-        return true
+    if m.dvrButton.hasFocus()
+        if key = "left"
+            m.logoutButton.setFocus(true)
+            return true
+        end if
+
+        if key = "down"
+            m.list.setFocus(true)
+            return true
+        end if
+    end if
+
+    if m.logoutButton.hasFocus()
+        if key = "right"
+            m.dvrButton.setFocus(true)
+            return true
+        end if
+
+        if key = "down"
+            m.list.setFocus(true)
+            return true
+        end if
     end if
 
     return false
