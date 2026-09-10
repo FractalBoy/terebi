@@ -138,7 +138,7 @@ sub startAccessTokenRefresh()
     m.activeRefreshTask.serverUrl = m.top.serverUrl
     m.activeRefreshTask.refreshToken = m.refreshToken
     m.activeRefreshTask.requestId = m.refreshRequestId
-    m.activeRefreshTask.observeFieldScoped("refreshStatus", "onAccessTokenRefreshChanged")
+    m.activeRefreshTask.observeField("refreshStatus", "onAccessTokenRefreshChanged")
     m.activeRefreshTask.control = "run"
 end sub
 
@@ -290,6 +290,7 @@ sub onRecordingSelected()
     if index < 0 or index >= m.recordings.count() then return
     m.requestMode = "playback"
     m.getRecordingsTask.recordingId = m.recordings[index].id.toStr()
+    m.getRecordingsTask.accessToken = m.accessToken
     m.getRecordingsTask.observeField("recordings", "playRecording")
     m.getRecordingsTask.control = "run"
 end sub
