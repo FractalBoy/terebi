@@ -32,8 +32,6 @@ sub init()
     m.refreshTimer = createObject("roSGNode", "Timer")
     m.refreshTimer.duration = 1500
     m.refreshTimer.repeat = false
-    m.videoHttpAgent = CreateObject("roHttpAgent")
-    m.video.setHttpAgent(m.videoHttpAgent)
 
     m.grid.observeField("itemSelected", "onRecordingSelected")
     m.grid.observeField("itemFocused", "onRecordingFocused")
@@ -45,6 +43,7 @@ sub init()
     m.signInScreen.observeField("submissionId", "onCredentialsSubmitted")
     m.getRecordingsTask.observeField("requestStatus", "onRecordingsRequestStatus")
     m.refreshTimer.observeField("fire", "onRefreshTimerFired")
+    m.video.asyncStopSemantics = true
 
     registry = CreateObject("roRegistrySection", "Terebi")
     if registry.exists("serverUrl") then m.top.serverUrl = registry.read("serverUrl")
@@ -156,10 +155,30 @@ sub onAccessTokenRefreshChanged()
 end sub
 
 sub updateVideoAuthorization()
+    if m.video.content = invalid
+        return
+    end if
+
     if m.accessToken = invalid or m.accessToken = ""
-        m.videoHttpAgent.setHeaders({})
-    else
-        m.videoHttpAgent.setHeaders({ Authorization: "Bearer " + m.accessToken })
+        m.video.content.setHeaders({})
+        return
+    end if
+
+    m.video.content.setHeaders({ "Authorization": "Bearer " + m.accessToken })
+
+    if m.video.state = "playing"
+        m.video.observeField("state", "onVideoState")
+        m.restartVideo = true
+        m.video.control = "stop"
+    end if
+end sub
+
+sub onVideoState()
+    if m.video.state = "stopped" and m.restartVideo
+        videoPosition = m.video.position
+        m.video.seek = videoPosition
+        m.video.control = "play"
+        m.restartVideo = false
     end if
 end sub
 
@@ -317,6 +336,7 @@ sub playRecording()
     end if
 
     m.video.content = content
+    updateVideoAuthorization()
     hideLibrary()
     m.video.visible = true
     m.video.setFocus(true)
