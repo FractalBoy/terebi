@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component name="GetRecordingsTask" extends="Task">
+<component name="RefreshAccessTokenTask" extends="Task">
     <interface>
         <field id="serverUrl" type="string" />
+        <field id="refreshToken" type="string" />
+        <field id="requestId" type="integer" />
         <field id="accessToken" type="string" />
-        <field id="recordingId" type="string" />
-        <field id="recordings" type="roArray" />
-        <field id="requestStatus" type="string" value="idle" />
+        <field id="refreshStatus" type="string" value="idle" />
         <field id="failureMessage" type="string" />
     </interface>
 </component>

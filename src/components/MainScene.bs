@@ -1,6 +1,8 @@
 sub init()
-    m.jwtToken = ""
+    m.accessToken = ""
+    m.refreshToken = ""
     m.authRequestId = 0
+    m.refreshRequestId = 0
     m.isLoggedIn = false
     m.recordings = []
     m.requestMode = ""
@@ -27,6 +29,11 @@ sub init()
     m.video = m.top.findNode("video")
     m.signInScreen = m.top.findNode("signInScreen")
     m.getRecordingsTask = createObject("roSGNode", "GetRecordingsTask")
+    m.refreshTimer = createObject("roSGNode", "Timer")
+    m.refreshTimer.duration = 1500
+    m.refreshTimer.repeat = false
+    m.videoHttpAgent = CreateObject("roHttpAgent")
+    m.video.setHttpAgent(m.videoHttpAgent)
 
     m.video.observeField("state", "onState")
     m.grid.observeField("itemSelected", "onRecordingSelected")
@@ -38,6 +45,7 @@ sub init()
     m.errorLogoutButton.observeField("buttonSelected", "showLogoutConfirmation")
     m.signInScreen.observeField("submissionId", "onCredentialsSubmitted")
     m.getRecordingsTask.observeField("requestStatus", "onRecordingsRequestStatus")
+    m.refreshTimer.observeField("fire", "onRefreshTimerFired")
 
     registry = CreateObject("roRegistrySection", "Terebi")
     if registry.exists("serverUrl") then m.top.serverUrl = registry.read("serverUrl")
@@ -72,10 +80,11 @@ sub onCredentialsSubmitted()
     startAuthentication(true)
 end sub
 
-sub startAuthentication(saveOnSuccess as boolean)
+sub startAuthentication(saveOnSuccess as boolean, isRecovery = false as boolean)
     m.authRequestId = m.authRequestId + 1
     m.saveCredentialsOnSuccess = saveOnSuccess
-    m.signInScreen.isSubmitting = true
+    m.isAuthenticationRecovery = isRecovery
+    if not isRecovery then m.signInScreen.isSubmitting = true
     m.activeJwtTask = createObject("roSGNode", "GetJwtTokenTask")
     m.activeJwtTask.serverUrl = m.top.serverUrl
     m.activeJwtTask.username = m.top.username
@@ -90,7 +99,10 @@ sub onJwtAuthenticationChanged()
         return
     end if
     if m.activeJwtTask.authStatus = "success"
-        m.jwtToken = m.activeJwtTask.jwtToken
+        m.accessToken = m.activeJwtTask.accessToken
+        m.refreshToken = m.activeJwtTask.refreshToken
+        updateVideoAuthorization()
+        scheduleTokenRefresh()
         if m.saveCredentialsOnSuccess
             registry = CreateObject("roRegistrySection", "Terebi")
             registry.write("serverUrl", m.top.serverUrl)
@@ -101,11 +113,61 @@ sub onJwtAuthenticationChanged()
         m.isLoggedIn = true
         m.signInScreen.visible = false
         m.signInScreen.isSubmitting = false
-        requestRecordings()
+        if not m.isAuthenticationRecovery
+            requestRecordings()
+        end if
     else if m.activeJwtTask.authStatus = "failure"
-        m.jwtToken = ""
+        clearTokens()
         showSignInScreen(m.activeJwtTask.failureMessage)
     end if
+end sub
+
+sub scheduleTokenRefresh()
+    m.refreshTimer.control = "stop"
+    m.refreshTimer.control = "start"
+end sub
+
+sub onRefreshTimerFired()
+    if not m.isLoggedIn then return
+    startAccessTokenRefresh()
+end sub
+
+sub startAccessTokenRefresh()
+    if m.refreshToken = invalid or m.refreshToken = "" then return
+    m.refreshRequestId = m.refreshRequestId + 1
+    m.activeRefreshTask = createObject("roSGNode", "RefreshAccessTokenTask")
+    m.activeRefreshTask.serverUrl = m.top.serverUrl
+    m.activeRefreshTask.refreshToken = m.refreshToken
+    m.activeRefreshTask.requestId = m.refreshRequestId
+    m.activeRefreshTask.observeFieldScoped("refreshStatus", "onAccessTokenRefreshChanged")
+    m.activeRefreshTask.control = "run"
+end sub
+
+sub onAccessTokenRefreshChanged()
+    if m.activeRefreshTask = invalid or m.activeRefreshTask.requestId <> m.refreshRequestId
+        return
+    end if
+    if m.activeRefreshTask.refreshStatus = "success"
+        m.accessToken = m.activeRefreshTask.accessToken
+        updateVideoAuthorization()
+        scheduleTokenRefresh()
+    else if m.activeRefreshTask.refreshStatus = "failure"
+        startAuthentication(false, true)
+    end if
+end sub
+
+sub updateVideoAuthorization()
+    if m.accessToken = invalid or m.accessToken = ""
+        m.videoHttpAgent.setHeaders({})
+    else
+        m.videoHttpAgent.setHeaders({ Authorization: "Bearer " + m.accessToken })
+    end if
+end sub
+
+sub clearTokens()
+    m.accessToken = ""
+    m.refreshToken = ""
+    updateVideoAuthorization()
 end sub
 
 sub requestRecordings()
@@ -114,7 +176,7 @@ sub requestRecordings()
     hideLibrary()
     m.loadingState.visible = true
     m.getRecordingsTask.serverUrl = m.top.serverUrl
-    m.getRecordingsTask.jwtToken = m.jwtToken
+    m.getRecordingsTask.accessToken = m.accessToken
     m.getRecordingsTask.recordingId = ""
     m.getRecordingsTask.observeField("recordings", "onRecordingsReturned")
     m.getRecordingsTask.control = "run"
@@ -252,7 +314,6 @@ sub playRecording()
         content.length = (recording.custom_properties.program.endMs - recording.custom_properties.program.startMs) / 1000
     end if
 
-    content.AddHeader("Authorization", "Bearer " + m.jwtToken)
     m.video.content = content
     hideLibrary()
     m.video.visible = true
@@ -301,8 +362,11 @@ end sub
 
 sub logout()
     m.authRequestId = m.authRequestId + 1
-    m.jwtToken = ""
+    m.refreshRequestId = m.refreshRequestId + 1
+    m.refreshTimer.control = "stop"
+    clearTokens()
     m.activeJwtTask = invalid
+    m.activeRefreshTask = invalid
     m.getRecordingsTask.control = "stop"
     m.top.serverUrl = ""
     m.top.username = ""

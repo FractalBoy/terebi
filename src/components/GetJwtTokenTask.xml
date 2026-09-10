@@ -5,7 +5,8 @@
         <field id="username" type="string" />
         <field id="password" type="string" />
         <field id="requestId" type="integer" />
-        <field id="jwtToken" type="string" />
+        <field id="accessToken" type="string" />
+        <field id="refreshToken" type="string" />
         <field id="authStatus" type="string" value="idle" />
         <field id="failureMessage" type="string" />
     </interface>

@@ -3,7 +3,8 @@ sub init()
 end sub
 
 sub getJwtToken()
-    m.top.jwtToken = ""
+    m.top.accessToken = ""
+    m.top.refreshToken = ""
     m.top.failureMessage = ""
     m.top.authStatus = "running"
 
@@ -38,16 +39,22 @@ sub getJwtToken()
 
     response = ParseJson(msg.GetString())
     if response = invalid
-        failAuthentication("The server did not return a JWT.")
+        failAuthentication("The server did not return authentication tokens.")
         return
     end if
 
     if response.access = invalid or response.access = ""
-        failAuthentication("The server did not return a JWT.")
+        failAuthentication("The server did not return an access token.")
         return
     end if
 
-    m.top.jwtToken = response.access
+    if response.refresh = invalid or response.refresh = ""
+        failAuthentication("The server did not return a refresh token.")
+        return
+    end if
+
+    m.top.accessToken = response.access
+    m.top.refreshToken = response.refresh
     m.top.authStatus = "success"
 end sub
 

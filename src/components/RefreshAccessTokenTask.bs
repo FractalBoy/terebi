@@ -1,0 +1,50 @@
+sub init()
+    m.top.functionName = "refreshAccessToken"
+end sub
+
+sub refreshAccessToken()
+    m.top.accessToken = ""
+    m.top.failureMessage = ""
+    m.top.refreshStatus = "running"
+
+    xfer = CreateObject("roUrlTransfer")
+    xfer.setUrl(m.top.serverUrl + "/api/accounts/token/refresh/")
+    xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    xfer.AddHeader("X-Roku-Reserved-Dev-Id", "")
+    xfer.InitClientCertificates()
+    xfer.AddHeader("Content-Type", "application/json")
+    xfer.AddHeader("Accept", "application/json")
+
+    port = CreateObject("roMessagePort")
+    xfer.SetMessagePort(port)
+    if not xfer.AsyncPostFromString(FormatJson({ refresh: m.top.refreshToken }))
+        failRefresh("Unable to start the token refresh request.")
+        return
+    end if
+
+    msg = wait(0, port)
+    if type(msg) <> "roUrlEvent"
+        failRefresh("No token refresh response was received from the server.")
+        return
+    end if
+
+    responseCode = msg.GetResponseCode()
+    if responseCode < 200 or responseCode >= 300
+        failRefresh("The server rejected the token refresh request.")
+        return
+    end if
+
+    response = ParseJson(msg.GetString())
+    if response = invalid or response.access = invalid or response.access = ""
+        failRefresh("The server did not return an access token.")
+        return
+    end if
+
+    m.top.accessToken = response.access
+    m.top.refreshStatus = "success"
+end sub
+
+sub failRefresh(message as string)
+    m.top.failureMessage = message
+    m.top.refreshStatus = "failure"
+end sub

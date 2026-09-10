@@ -19,7 +19,7 @@ sub getRecordings()
     xfer.AddHeader("X-Roku-Reserved-Dev-Id", "")
     xfer.InitClientCertificates()
 
-    xfer.addHeader("Authorization", "Bearer " + m.top.jwtToken)
+    xfer.addHeader("Authorization", "Bearer " + m.top.accessToken)
     xfer.addHeader("Accept", "application/json")
 
     port = CreateObject("roMessagePort")
