@@ -35,7 +35,6 @@ sub init()
     m.videoHttpAgent = CreateObject("roHttpAgent")
     m.video.setHttpAgent(m.videoHttpAgent)
 
-    m.video.observeField("state", "onState")
     m.grid.observeField("itemSelected", "onRecordingSelected")
     m.grid.observeField("itemFocused", "onRecordingFocused")
     m.dvrButton.observeField("buttonSelected", "showDvr")
@@ -311,7 +310,9 @@ sub playRecording()
         content.live = true
     else
         content.streamFormat = "mkv"
-        content.length = (recording.custom_properties.program.endMs - recording.custom_properties.program.startMs) / 1000
+        if recording.custom_properties.program.endMs <> invalid and recording.custom_properties.program.startMs <> invalid
+            content.length = (recording.custom_properties.program.endMs - recording.custom_properties.program.startMs) / 1000
+        end if
     end if
 
     m.video.content = content
@@ -381,10 +382,6 @@ sub logout()
         m.video.visible = false
     end if
     showSignInScreen("")
-end sub
-
-sub onState()
-    print m.video.state
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
