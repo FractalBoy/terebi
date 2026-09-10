@@ -158,8 +158,8 @@ sub onRecordingsReturned()
         item.posterUrl = recording.custom_properties.poster_url
         item.recordingStatus = recording.custom_properties.status
         item.remuxSuccess = recording.custom_properties.remux_success
-        item.programStart = recording.custom_properties.program.start_time
-        item.programEnd = recording.custom_properties.program.end_time
+        item.programStart = recording.start_time
+        item.programEnd = recording.end_time
     end for
     m.recordingCount.text = m.recordings.count().toStr() + " recordings"
     m.grid.content = content
@@ -190,7 +190,7 @@ sub showRecordingDetails(index as integer)
     end if
     m.detailsTitle.text = program.title
     m.detailsSubtitle.text = program.sub_title
-    m.detailsTime.text = displayDateTime(program.start_time) + "  —  " + displayDateTime(program.end_time)
+    m.detailsTime.text = displayDateTime(m.recordings[index].start_time) + "  —  " + displayDateTime(m.recordings[index].end_time)
     m.detailsDescription.text = program.description
     m.detailsPanel.visible = true
 end sub
