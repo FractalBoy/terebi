@@ -1,0 +1,24 @@
+sub init()
+    m.liveIcon = m.top.findNode("liveIcon")
+    m.dvrIcon = m.top.findNode("dvrIcon")
+    m.title = m.top.findNode("title")
+    m.description = m.top.findNode("description")
+    m.focusBorder = m.top.findNode("focusBorder")
+end sub
+
+sub showContent()
+    if m.top.itemContent = invalid then return
+    m.title.text = m.top.itemContent.title
+    m.description.text = m.top.itemContent.description
+    m.liveIcon.visible = m.top.itemContent.menuType = "live"
+    m.dvrIcon.visible = m.top.itemContent.menuType = "dvr"
+end sub
+
+sub showFocus()
+    m.focusBorder.visible = m.top.itemHasFocus
+    if m.top.itemHasFocus
+        m.top.scale = [1.03, 1.03]
+    else
+        m.top.scale = [1.0, 1.0]
+    end if
+end sub

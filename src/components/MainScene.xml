@@ -7,18 +7,20 @@
     </interface>
     <children>
         <Rectangle width="1920" height="1080" color="0x0b1220ff" />
-        <Rectangle translation="[0,112]" width="1920" height="2" color="0x1c3150ff" />
-        <Group id="topRail" visible="false">
-            <Rectangle width="1920" height="112" color="0x101b2dff" />
+        <Group id="mainMenu" visible="false">
+            <Label text="TEREBI" translation="[70,48]" width="410" height="42" font="font:LargeBoldSystemFont" color="0x7dd3fcff" />
+            <Label text="Choose what you want to watch" translation="[72,104]" width="700" height="30" font="font:SmallSystemFont" color="0xa9bad2ff" />
+            <Button id="logoutButton" text="Log out" translation="[1632,45]" minWidth="220" height="64" showFocusFootprint="false" />
+            <Rectangle translation="[70,164]" width="1780" height="2" color="0x1c3150ff" />
+            <Label text="WATCH" translation="[70,204]" width="400" height="28" font="font:SmallBoldSystemFont" color="0xa9bad2ff" />
+            <MarkupGrid id="menuGrid" translation="[290,276]" itemComponentName="MenuPoster" itemSize="[650,438]" itemSpacing="[40,0]" numColumns="2" numRows="1" drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
+        </Group>
+        <Group id="dvrHeader" visible="false">
             <Label text="TEREBI" translation="[70,23]" width="410" height="34" font="font:MediumBoldSystemFont" color="0x7dd3fcff" />
-            <Label id="sectionLabel" text="LIVE TV" translation="[70,58]" width="410" height="28" font="font:SmallSystemFont" color="0xa9bad2ff" />
-            <Label id="recordingCount" translation="[760,42]" width="400" height="35" font="font:MediumBoldSystemFont" horizAlign="center" color="0xf4f8ffff" /> 
-            <LayoutGroup translation="[1090,25]" layoutDirection="horiz">
-                <Button id="liveButton" text="Live TV" minWidth="100" height="62" showFocusFootprint="false" />
-                <Button id="dvrButton" text="DVR" minWidth="100" height="62" showFocusFootprint="false" />
-                <Button id="refreshButton" text="Refresh" minWidth="100" height="62" showFocusFootprint="false" />
-                <Button id="logoutButton" text="Log out" minWidth="100" height="62" showFocusFootprint="false" />
-            </LayoutGroup>
+            <Label text="DVR LIBRARY" translation="[70,58]" width="410" height="28" font="font:SmallSystemFont" color="0xa9bad2ff" />
+            <Label id="recordingCount" translation="[760,42]" width="400" height="35" font="font:MediumBoldSystemFont" horizAlign="center" color="0xf4f8ffff" />
+            <Button id="refreshButton" text="Refresh" translation="[1632,25]" minWidth="220" height="62" showFocusFootprint="false" />
+            <Rectangle translation="[0,112]" width="1920" height="2" color="0x1c3150ff" />
         </Group>
         <Label id="libraryTitle" text="Your recordings" translation="[74,150]" width="900" height="46" font="font:LargeBoldSystemFont" color="0xf4f8ffff" visible="false" />
         <Label id="libraryHint" text="Browse recordings and press OK to play" translation="[76,202]" width="900" height="28" font="font:SmallSystemFont" color="0xa9bad2ff" visible="false" />
@@ -35,17 +37,16 @@
         </Group>
         <Group id="loadingState" visible="false">
             <Rectangle width="1920" height="1080" color="0x0b1220dd" />
-            <Label id="loadingLabel" text="Loading Live TV…" translation="[460,482]" width="1000" height="48" horizAlign="center" font="font:LargeBoldSystemFont" color="0xf4f8ffff" />
+            <Label id="loadingLabel" text="Loading…" translation="[460,482]" width="1000" height="48" horizAlign="center" font="font:LargeBoldSystemFont" color="0xf4f8ffff" />
         </Group>
         <Group id="emptyState" visible="false">
-            <Label id="emptyTitle" text="No recordings yet" translation="[360,400]" width="1200" height="54" horizAlign="center" font="font:LargeBoldSystemFont" color="0xf4f8ffff" />
-            <Label id="emptyHint" text="Completed and in-progress recordings will appear here." translation="[360,466]" width="1200" height="32" horizAlign="center" color="0xa9bad2ff" />
+            <Label id="emptyTitle" translation="[360,400]" width="1200" height="54" horizAlign="center" font="font:LargeBoldSystemFont" color="0xf4f8ffff" />
+            <Label id="emptyHint" translation="[360,466]" width="1200" height="32" horizAlign="center" color="0xa9bad2ff" />
         </Group>
         <Group id="errorState" visible="false">
             <Label id="libraryError" translation="[360,390]" width="1200" height="54" horizAlign="center" font="font:LargeBoldSystemFont" color="0xffa4a4ff" />
             <Label text="Check that Dispatcharr is available, then try again." translation="[360,458]" width="1200" height="32" horizAlign="center" color="0xa9bad2ff" />
-            <Button id="retryButton" text="Retry" translation="[730,530]" minWidth="220" height="64" />
-            <Button id="errorLogoutButton" text="Log out" translation="[970,530]" minWidth="220" height="64" />
+            <Button id="retryButton" text="Retry" translation="[850,530]" minWidth="220" height="64" />
         </Group>
         <Video id="video" visible="false" />
         <SignInScreen id="signInScreen" visible="false" />
