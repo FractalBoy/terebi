@@ -5,14 +5,21 @@
         <field id="channelSelected" type="integer" />
         <field id="channelActivated" type="integer" alwaysNotify="true" />
         <field id="topRailRequested" type="integer" alwaysNotify="true" />
+        <function name="focusGuide" />
     </interface>
     <children>
-        <Label text="Live TV" translation="[74,150]" width="900" height="46" font="font:LargeBoldSystemFont" color="0xf4f8ffff" />
-        <Label text="Browse channels and programs. Press OK to watch." translation="[76,202]" width="900" height="28" font="font:SmallSystemFont" color="0xa9bad2ff" />
-        <Label id="windowStart" translation="[430,224]" width="360" height="28" font="font:SmallBoldSystemFont" color="0x7dd3fcff" />
-        <Label id="windowEnd" translation="[1486,224]" width="360" height="28" horizAlign="right" font="font:SmallBoldSystemFont" color="0x7dd3fcff" />
+        <Label text="Live TV" translation="[74,150]" width="900" height="46"
+            font="font:LargeBoldSystemFont" color="0xf4f8ffff" />
+        <Label text="Browse channels and programs. Press OK to watch." translation="[76,202]"
+            width="900" height="28" font="font:SmallSystemFont" color="0xa9bad2ff" />
+        <Label id="windowStart" translation="[430,224]" width="360" height="28"
+            font="font:SmallBoldSystemFont" color="0x7dd3fcff" />
+        <Label id="windowEnd" translation="[1486,224]" width="360" height="28" horizAlign="right"
+            font="font:SmallBoldSystemFont" color="0x7dd3fcff" />
         <Rectangle translation="[74,254]" width="1772" height="2" color="0x1c3150ff" />
-        <MarkupGrid id="rowGrid" translation="[74,268]" itemComponentName="LiveGuideRow" itemSize="[1772,100]" itemSpacing="[0,8]" numColumns="1" numRows="7" drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
+        <MarkupGrid id="rowGrid" translation="[74,268]" itemComponentName="LiveGuideRow"
+            itemSize="[1772,100]" itemSpacing="[0,8]" numColumns="1" numRows="7"
+            drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
         <Rectangle translation="[1138,268]" width="2" height="756" color="0x38bdf8aa" />
     </children>
 </component>
