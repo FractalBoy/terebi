@@ -5,11 +5,15 @@ sub init()
     m.refreshRequestId = 0
     m.isLoggedIn = false
     m.recordings = []
+    m.liveChannels = []
+    m.activeView = "live"
     m.requestMode = ""
     m.grid = m.top.findNode("recordingsGrid")
+    m.liveGuide = m.top.findNode("liveGuide")
     m.topRail = m.top.findNode("topRail")
     m.libraryTitle = m.top.findNode("libraryTitle")
     m.libraryHint = m.top.findNode("libraryHint")
+    m.sectionLabel = m.top.findNode("sectionLabel")
     m.recordingCount = m.top.findNode("recordingCount")
     m.detailsPanel = m.top.findNode("detailsPanel")
     m.detailsStatus = m.top.findNode("detailsStatus")
@@ -18,30 +22,40 @@ sub init()
     m.detailsTime = m.top.findNode("detailsTime")
     m.detailsDescription = m.top.findNode("detailsDescription")
     m.loadingState = m.top.findNode("loadingState")
+    m.loadingLabel = m.top.findNode("loadingLabel")
     m.emptyState = m.top.findNode("emptyState")
+    m.emptyTitle = m.top.findNode("emptyTitle")
+    m.emptyHint = m.top.findNode("emptyHint")
     m.errorState = m.top.findNode("errorState")
     m.libraryError = m.top.findNode("libraryError")
     m.retryButton = m.top.findNode("retryButton")
     m.errorLogoutButton = m.top.findNode("errorLogoutButton")
+    m.liveButton = m.top.findNode("liveButton")
     m.dvrButton = m.top.findNode("dvrButton")
     m.refreshButton = m.top.findNode("refreshButton")
     m.logoutButton = m.top.findNode("logoutButton")
     m.video = m.top.findNode("video")
     m.signInScreen = m.top.findNode("signInScreen")
     m.getRecordingsTask = createObject("roSGNode", "GetRecordingsTask")
+    m.getLiveGuideTask = createObject("roSGNode", "GetLiveGuideTask")
     m.refreshTimer = createObject("roSGNode", "Timer")
     m.refreshTimer.duration = 1500
     m.refreshTimer.repeat = false
 
     m.grid.observeField("itemSelected", "onRecordingSelected")
     m.grid.observeField("itemFocused", "onRecordingFocused")
+    m.liveGuide.observeField("channelActivated", "onLiveChannelSelected")
+    m.liveGuide.observeField("topRailRequested", "onLiveGuideTopRailRequested")
+    m.liveButton.observeField("buttonSelected", "requestLiveGuide")
     m.dvrButton.observeField("buttonSelected", "showDvr")
-    m.refreshButton.observeField("buttonSelected", "requestRecordings")
+    m.refreshButton.observeField("buttonSelected", "refreshCurrentView")
     m.logoutButton.observeField("buttonSelected", "showLogoutConfirmation")
-    m.retryButton.observeField("buttonSelected", "requestRecordings")
+    m.retryButton.observeField("buttonSelected", "refreshCurrentView")
     m.errorLogoutButton.observeField("buttonSelected", "showLogoutConfirmation")
     m.signInScreen.observeField("submissionId", "onCredentialsSubmitted")
     m.getRecordingsTask.observeField("requestStatus", "onRecordingsRequestStatus")
+    m.getLiveGuideTask.observeField("requestStatus", "onLiveGuideRequestStatus")
+    m.getLiveGuideTask.observeField("guideChannels", "onLiveGuideReturned")
     m.refreshTimer.observeField("fire", "onRefreshTimerFired")
     m.video.asyncStopSemantics = true
 
@@ -112,7 +126,7 @@ sub onJwtAuthenticationChanged()
         m.signInScreen.visible = false
         m.signInScreen.isSubmitting = false
         if not m.isAuthenticationRecovery
-            requestRecordings()
+            requestLiveGuide()
         end if
     else if m.activeJwtTask.authStatus = "failure"
         clearTokens()
@@ -190,14 +204,38 @@ end sub
 
 sub requestRecordings()
     if not m.isLoggedIn then return
+    m.activeView = "dvr"
     m.requestMode = "library"
     hideLibrary()
+    m.emptyTitle.text = "No recordings yet"
+    m.emptyHint.text = "Completed and in-progress recordings will appear here."
+    m.loadingLabel.text = "Loading your DVR library…"
     m.loadingState.visible = true
     m.getRecordingsTask.serverUrl = m.top.serverUrl
     m.getRecordingsTask.accessToken = m.accessToken
     m.getRecordingsTask.recordingId = ""
     m.getRecordingsTask.observeField("recordings", "onRecordingsReturned")
     m.getRecordingsTask.control = "run"
+end sub
+
+sub requestLiveGuide()
+    if not m.isLoggedIn then return
+    m.activeView = "live"
+    hideLibrary()
+    m.recordingCount.text = ""
+    m.loadingLabel.text = "Loading Live TV…"
+    m.loadingState.visible = true
+    m.getLiveGuideTask.serverUrl = m.top.serverUrl
+    m.getLiveGuideTask.accessToken = m.accessToken
+    m.getLiveGuideTask.control = "run"
+end sub
+
+sub refreshCurrentView()
+    if m.activeView = "dvr"
+        requestRecordings()
+    else
+        requestLiveGuide()
+    end if
 end sub
 
 sub onRecordingsRequestStatus()
@@ -224,6 +262,7 @@ sub onRecordingsReturned()
     m.recordings = m.getRecordingsTask.recordings
     m.loadingState.visible = false
     m.topRail.visible = true
+    m.sectionLabel.text = "DVR LIBRARY"
     if m.recordings.count() = 0
         m.emptyState.visible = true
         return
@@ -248,6 +287,39 @@ sub onRecordingsReturned()
     m.libraryHint.visible = true
     m.grid.setFocus(true)
     showRecordingDetails(0)
+end sub
+
+sub onLiveGuideRequestStatus()
+    if m.getLiveGuideTask.requestStatus <> "failure" then return
+    m.loadingState.visible = false
+    m.errorState.visible = true
+    m.topRail.visible = true
+    m.libraryError.text = m.getLiveGuideTask.failureMessage
+    m.retryButton.setFocus(true)
+end sub
+
+sub onLiveGuideReturned()
+    if not m.isLoggedIn or m.activeView <> "live" then return
+    m.liveChannels = m.getLiveGuideTask.guideChannels
+    m.loadingState.visible = false
+    m.topRail.visible = true
+    m.sectionLabel.text = "LIVE TV"
+    if m.liveChannels.count() = 0
+        m.emptyTitle.text = "No Live TV channels"
+        m.emptyHint.text = "Channels will appear here when they are available."
+        m.emptyState.visible = true
+        return
+    end if
+    m.liveGuide.guideChannels = m.liveChannels
+    m.liveGuide.visible = true
+end sub
+
+sub onLiveChannelSelected()
+    playLiveChannel(m.liveGuide.channelActivated)
+end sub
+
+sub onLiveGuideTopRailRequested()
+    m.liveButton.setFocus(true)
 end sub
 
 sub onRecordingFocused()
@@ -291,6 +363,7 @@ end function
 
 sub hideLibrary()
     m.grid.visible = false
+    m.liveGuide.visible = false
     m.topRail.visible = false
     m.libraryTitle.visible = false
     m.libraryHint.visible = false
@@ -301,7 +374,7 @@ sub hideLibrary()
 end sub
 
 sub showDvr()
-    if m.grid.visible then m.grid.setFocus(true)
+    requestRecordings()
 end sub
 
 sub onRecordingSelected()
@@ -343,11 +416,31 @@ sub playRecording()
     m.video.control = "play"
 end sub
 
+sub playLiveChannel(index as integer)
+    if index < 0 or index >= m.liveChannels.count() then return
+    channel = m.liveChannels[index]
+    if channel.uuid = invalid or channel.uuid = ""
+        showPlaybackError("This channel is not available for playback.")
+        return
+    end if
+    content = CreateObject("roSGNode", "ContentNode")
+    content.url = m.top.serverUrl + "/proxy/ts/stream/" + channel.uuid + "?output_profile=1"
+    content.title = channel.name
+    content.streamFormat = "ts"
+    content.live = true
+    m.video.content = content
+    updateVideoAuthorization()
+    hideLibrary()
+    m.video.visible = true
+    m.video.setFocus(true)
+    m.video.control = "play"
+end sub
+
 sub showPlaybackError(message as string)
     m.playbackErrorDialog = createObject("roSGNode", "StandardMessageDialog")
     m.playbackErrorDialog.title = "Playback unavailable"
     m.playbackErrorDialog.message = [message]
-    m.playbackErrorDialog.buttons = ["Back to library"]
+    m.playbackErrorDialog.buttons = ["Back"]
     m.playbackErrorDialog.observeFieldScoped("buttonSelected", "closePlaybackError")
     m.top.dialog = m.playbackErrorDialog
 end sub
@@ -355,7 +448,7 @@ end sub
 sub closePlaybackError()
     m.playbackErrorDialog.close = true
     m.top.dialog = invalid
-    requestRecordings()
+    refreshCurrentView()
 end sub
 
 sub showLogoutConfirmation()
@@ -390,6 +483,7 @@ sub logout()
     m.activeJwtTask = invalid
     m.activeRefreshTask = invalid
     m.getRecordingsTask.control = "stop"
+    m.getLiveGuideTask.control = "stop"
     m.top.serverUrl = ""
     m.top.username = ""
     m.top.password = ""
@@ -411,26 +505,43 @@ function onKeyEvent(key as string, press as boolean) as boolean
         if key = "back"
             m.video.control = "stop"
             m.video.visible = false
-            m.grid.visible = true
             m.topRail.visible = true
-            m.libraryTitle.visible = true
-            m.libraryHint.visible = true
-            showRecordingDetails(m.grid.itemFocused)
-            m.grid.setFocus(true)
+            if m.activeView = "live"
+                m.liveGuide.visible = true
+                m.liveGuide.callFunc("focusGuide")
+            else
+                m.grid.visible = true
+                m.libraryTitle.visible = true
+                m.libraryHint.visible = true
+                showRecordingDetails(m.grid.itemFocused)
+                m.grid.setFocus(true)
+            end if
             return true
         end if
         return false
     end if
-    if key = "up" and m.grid.hasFocus()
+    if key = "up" and (m.grid.hasFocus() or m.liveGuide.hasFocus())
         m.dvrButton.setFocus(true)
         return true
+    end if
+    if m.liveButton.hasFocus()
+        if key = "right"
+            m.dvrButton.setFocus(true)
+            return true
+        else if key = "down" and m.liveGuide.visible
+            m.liveGuide.callFunc("focusGuide")
+            return true
+        end if
     end if
     if m.dvrButton.hasFocus()
         if key = "right"
             m.refreshButton.setFocus(true)
             return true
         else if key = "down"
-            m.grid.setFocus(true)
+            if m.grid.visible then m.grid.setFocus(true)
+            return true
+        else if key = "left"
+            m.liveButton.setFocus(true)
             return true
         end if
     end if
@@ -442,7 +553,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
             m.logoutButton.setFocus(true)
             return true
         else if key = "down"
-            m.grid.setFocus(true)
+            if m.activeView = "live"
+                m.liveGuide.callFunc("focusGuide")
+            else
+                m.grid.setFocus(true)
+            end if
             return true
         end if
     end if
@@ -451,7 +566,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
             m.refreshButton.setFocus(true)
             return true
         else if key = "down"
-            m.grid.setFocus(true)
+            if m.activeView = "live"
+                m.liveGuide.callFunc("focusGuide")
+            else
+                m.grid.setFocus(true)
+            end if
             return true
         end if
     end if

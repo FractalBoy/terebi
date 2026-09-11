@@ -1,0 +1,146 @@
+sub init()
+    m.top.functionName = "getLiveGuide"
+end sub
+
+sub getLiveGuide()
+    m.top.requestStatus = "running"
+    m.top.failureMessage = ""
+
+    channels = getAllPages(m.top.serverUrl + "/api/channels/channels/summary/")
+    if channels = invalid then return
+    logos = getAllPages(m.top.serverUrl + "/api/channels/logos/")
+    if logos = invalid then return
+    epgData = getAllPages(m.top.serverUrl + "/api/epg/epgdata/")
+    if epgData = invalid then return
+    programs = getAllPages(m.top.serverUrl + "/api/epg/grid/")
+    if programs = invalid then return
+
+    logosById = {}
+    for each logo in logos
+        if logo.id <> invalid then logosById[logo.id.toStr()] = logo
+    end for
+    tvgIdsByEpgDataId = {}
+    for each epg in epgData
+        if epg.id <> invalid and epg.tvg_id <> invalid then tvgIdsByEpgDataId[epg.id.toStr()] = epg.tvg_id
+    end for
+    programsByTvgId = {}
+    for each program in programs
+        if program.tvg_id <> invalid
+            key = program.tvg_id.toStr()
+            if programsByTvgId[key] = invalid then programsByTvgId[key] = []
+            programsByTvgId[key].push(program)
+        end if
+    end for
+
+    guideChannels = []
+    for each channel in channels
+        guideChannel = {
+            id: channel.id,
+            uuid: channel.uuid,
+            name: channel.name,
+            channelNumber: channel.channel_number,
+            logoUrl: "",
+            programs: []
+        }
+        if channel.logo_id <> invalid and logosById[channel.logo_id.toStr()] <> invalid
+            logo = logosById[channel.logo_id.toStr()]
+            if logo.cache_url <> invalid then guideChannel.logoUrl = logo.cache_url
+        end if
+        if channel.epg_data_id <> invalid and tvgIdsByEpgDataId[channel.epg_data_id.toStr()] <> invalid
+            tvgId = tvgIdsByEpgDataId[channel.epg_data_id.toStr()]
+            if programsByTvgId[tvgId.toStr()] <> invalid then guideChannel.programs = programsByTvgId[tvgId.toStr()]
+        end if
+        sortPrograms(guideChannel.programs)
+        guideChannels.push(guideChannel)
+    end for
+    sortChannels(guideChannels)
+    m.top.guideChannels = guideChannels
+    m.top.requestStatus = "success"
+end sub
+
+function getAllPages(url as string) as object
+    allItems = []
+    nextUrl = url
+    while nextUrl <> ""
+        response = getJson(nextUrl)
+        if response = invalid then return invalid
+        if type(response) = "roArray"
+            for each item in response
+                allItems.push(item)
+            end for
+            nextUrl = ""
+        else if response.results <> invalid and type(response.results) = "roArray"
+            for each item in response.results
+                allItems.push(item)
+            end for
+            if response.next <> invalid then nextUrl = response.next else nextUrl = ""
+        else if response.data <> invalid and type(response.data) = "roArray"
+            for each item in response.data
+                allItems.push(item)
+            end for
+            if response.next <> invalid then nextUrl = response.next else nextUrl = ""
+        else
+            failRequest("Dispatcharr returned invalid Live TV data.")
+            return invalid
+        end if
+        if nextUrl <> "" and left(nextUrl, 4) <> "http" then nextUrl = m.top.serverUrl + nextUrl
+    end while
+    return allItems
+end function
+
+function getJson(url as string) as dynamic
+    xfer = CreateObject("roUrlTransfer")
+    xfer.setUrl(url)
+    xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    xfer.AddHeader("X-Roku-Reserved-Dev-Id", "")
+    xfer.InitClientCertificates()
+    xfer.addHeader("Authorization", "Bearer " + m.top.accessToken)
+    xfer.addHeader("Accept", "application/json")
+    port = CreateObject("roMessagePort")
+    xfer.SetMessagePort(port)
+    if not xfer.AsyncGetToString()
+        failRequest("Unable to start the Live TV request.")
+        return invalid
+    end if
+    msg = wait(0, port)
+    if type(msg) <> "roUrlEvent"
+        failRequest("No Live TV response was received from Dispatcharr.")
+        return invalid
+    end if
+    if msg.GetResponseCode() < 200 or msg.GetResponseCode() >= 300
+        failRequest("Unable to load Live TV data from Dispatcharr.")
+        return invalid
+    end if
+    result = ParseJson(msg.GetString())
+    if result = invalid then failRequest("Dispatcharr returned invalid Live TV data.")
+    return result
+end function
+
+sub sortChannels(channels as object)
+    for i = 0 to channels.count() - 2
+        for j = i + 1 to channels.count() - 1
+            if channels[j].channelNumber < channels[i].channelNumber
+                swap = channels[i]
+                channels[i] = channels[j]
+                channels[j] = swap
+            end if
+        end for
+    end for
+end sub
+
+sub sortPrograms(programs as object)
+    for i = 0 to programs.count() - 2
+        for j = i + 1 to programs.count() - 1
+            if programs[j].start_time < programs[i].start_time
+                swap = programs[i]
+                programs[i] = programs[j]
+                programs[j] = swap
+            end if
+        end for
+    end for
+end sub
+
+sub failRequest(message as string)
+    m.top.failureMessage = message
+    m.top.requestStatus = "failure"
+end sub

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="GetLiveGuideTask" extends="Task">
+    <interface>
+        <field id="serverUrl" type="string" />
+        <field id="accessToken" type="string" />
+        <field id="guideChannels" type="roArray" />
+        <field id="requestStatus" type="string" value="idle" />
+        <field id="failureMessage" type="string" />
+    </interface>
+</component>

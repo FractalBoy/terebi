@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="LiveGuideRow" extends="Group">
+    <interface>
+        <field id="itemContent" type="node" onChange="showContent" />
+        <field id="itemHasFocus" type="boolean" onChange="showFocus" />
+    </interface>
+    <children>
+        <Rectangle width="1772" height="100" color="0x132238ff" />
+        <Rectangle translation="[344,0]" width="2" height="100" color="0x1c3150ff" />
+        <Poster id="logo" translation="[12,12]" width="76" height="76" loadWidth="76" loadHeight="76" loadDisplayMode="scaleToFit" />
+        <Label id="channelNumber" translation="[98,19]" width="230" height="29" font="font:SmallBoldSystemFont" color="0x7dd3fcff" />
+        <Label id="channelName" translation="[98,51]" width="230" height="32" font="font:SmallSystemFont" color="0xf4f8ffff" maxLines="1" />
+        <Group id="programs" translation="[356,0]" />
+        <Group id="focusBorder" visible="false">
+            <Rectangle width="5" height="100" color="0x38bdf8ff" />
+            <Rectangle translation="[0,95]" width="1772" height="5" color="0x38bdf8ff" />
+        </Group>
+    </children>
+</component>
