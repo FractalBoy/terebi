@@ -35,6 +35,7 @@ sub init()
     m.refreshButton = m.top.findNode("refreshButton")
     m.logoutButton = m.top.findNode("logoutButton")
     m.video = m.top.findNode("video")
+    m.video.observeField("state", "onVideoState")
     m.signInScreen = m.top.findNode("signInScreen")
     m.getRecordingsTask = createObject("roSGNode", "GetRecordingsTask")
     m.getLiveGuideTask = createObject("roSGNode", "GetLiveGuideTask")
@@ -181,14 +182,20 @@ sub updateVideoAuthorization()
     m.video.content.setHeaders({ "Authorization": "Bearer " + m.accessToken })
 
     if m.video.state = "playing"
-        m.video.observeField("state", "onVideoState")
         m.restartVideo = true
         m.video.control = "stop"
     end if
 end sub
 
 sub onVideoState()
-    if m.video.state = "stopped" and m.restartVideo
+    if m.video.state = "error"
+        showPlaybackError(m.video.errorStr)
+        m.video.control = "stop"
+        m.video.visible = false
+        return
+    end if
+
+    if m.video.state = "stopped" and m.restartVideo <> invalid and m.restartVideo
         videoPosition = m.video.position
         m.video.seek = videoPosition
         m.video.control = "play"
