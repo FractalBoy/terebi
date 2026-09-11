@@ -1,0 +1,33 @@
+sub init()
+    m.background = m.top.findNode("background")
+    m.logo = m.top.findNode("logo")
+    m.title = m.top.findNode("title")
+    m.focusIndicator = m.top.findNode("focusIndicator")
+end sub
+
+sub showContent()
+    if m.top.content = invalid then return
+    m.logo.uri = m.top.content.hdSmallIconUrl
+    m.title.text = m.top.content.title
+end sub
+
+sub updateLayout()
+    if m.top.width <= 0 or m.top.height <= 0 then return
+    m.background.width = m.top.width
+    m.background.height = m.top.height
+    m.focusIndicator.height = m.top.height
+
+    logoHeight = m.top.height - 24
+    if logoHeight > 66 then logoHeight = 66
+    if logoHeight < 1 then logoHeight = 1
+    m.logo.height = logoHeight
+    m.logo.loadHeight = logoHeight
+    m.logo.translation = [12, int((m.top.height - logoHeight) / 2)]
+
+    m.title.translation = [108, int((m.top.height - 54) / 2)]
+    m.title.width = m.top.width - 120
+end sub
+
+sub updateFocus()
+    m.focusIndicator.visible = m.top.hasFocus
+end sub

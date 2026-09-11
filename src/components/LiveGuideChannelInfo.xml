@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="LiveGuideChannelInfo" extends="Group">
+    <interface>
+        <field id="content" type="node" onChange="showContent" />
+        <field id="width" type="float" onChange="updateLayout" />
+        <field id="height" type="float" onChange="updateLayout" />
+        <field id="hasFocus" type="boolean" onChange="updateFocus" />
+    </interface>
+    <children>
+        <Rectangle id="background" width="300" height="90" color="0x132238ff" />
+        <Poster id="logo" translation="[12,12]" width="84" height="66" loadWidth="84"
+            loadHeight="66"
+            loadDisplayMode="scaleToFit" />
+        <Label id="title" translation="[108,18]" width="180" height="54" font="font:SmallSystemFont"
+            color="0xf4f8ffff" maxLines="2" />
+        <Rectangle id="focusIndicator" width="5" height="90" color="0x38bdf8ff" visible="false" />
+    </children>
+</component>

@@ -1,99 +1,70 @@
 sub init()
-    m.rowGrid = m.top.findNode("rowGrid")
-    m.windowStartLabel = m.top.findNode("windowStart")
-    m.windowEndLabel = m.top.findNode("windowEnd")
-    m.windowSeconds = 10800
-    m.panSeconds = 1800
-    m.guideStart = 0
-    m.windowStart = 0
-    m.rowGrid.observeField("itemFocused", "onChannelFocused")
-    m.rowGrid.observeField("itemSelected", "onChannelSelected")
+    m.timeGrid = m.top.findNode("timeGrid")
+    m.timeGrid.observeField("channelFocused", "onChannelFocused")
+    m.timeGrid.observeField("programSelected", "onProgramSelected")
 end sub
 
 sub showGuide()
     if m.top.guideChannels = invalid then return
     now = CreateObject("roDateTime")
-    m.guideStart = now.asSeconds()
-    m.windowStart = m.guideStart
-    buildRows()
+    m.timeGrid.contentStartTime = now.asSeconds()
+    buildContent()
     if m.top.guideChannels.count() > 0
-        m.rowGrid.setFocus(true)
+        m.timeGrid.setFocus(true)
         m.top.channelSelected = 0
     end if
 end sub
 
-sub buildRows()
+sub buildContent()
     content = CreateObject("roSGNode", "ContentNode")
     for each channel in m.top.guideChannels
-        item = content.createChild("ContentNode")
-        cursorTime = m.windowStart + (m.windowSeconds / 2)
-        item.addFields({ channelData: channel, windowStart: m.windowStart, windowSeconds: m.windowSeconds, cursorTime: cursorTime })
+        channelNode = content.createChild("ContentNode")
+        channelNode.title = channel.channelNumber.toStr() + "  " + channel.name
+        channelNode.hdSmallIconUrl = channel.logoUrl
+        addPrograms(channelNode, channel.programs)
     end for
-    focused = m.rowGrid.itemFocused
-    m.rowGrid.content = content
-    if focused >= 0 and focused < m.top.guideChannels.count() then m.rowGrid.jumpToItem = focused
-    updateTimeLabels()
-end sub
-
-sub updateTimeLabels()
-    m.windowStartLabel.text = formatGuideTime(m.windowStart)
-    m.windowEndLabel.text = formatGuideTime(m.windowStart + m.windowSeconds)
+    m.timeGrid.content = content
 end sub
 
 sub onChannelFocused()
-    if m.rowGrid.itemFocused >= 0 then m.top.channelSelected = m.rowGrid.itemFocused
+    if m.timeGrid.channelFocused >= 0 then m.top.channelSelected = m.timeGrid.channelFocused
 end sub
 
-sub onChannelSelected()
-    if m.rowGrid.itemSelected >= 0 then m.top.channelActivated = m.rowGrid.itemSelected
-end sub
-
-sub moveTime(direction as integer)
-    if m.top.guideChannels = invalid or m.top.guideChannels.count() = 0 then return
-    maximumStart = m.guideStart + 86400 - m.windowSeconds
-    nextStart = m.windowStart + (direction * m.panSeconds)
-    if nextStart < m.guideStart then nextStart = m.guideStart
-    if nextStart > maximumStart then nextStart = maximumStart
-    if nextStart = m.windowStart then return
-    m.windowStart = nextStart
-    buildRows()
+sub onProgramSelected()
+    if m.timeGrid.channelFocused >= 0 then m.top.channelActivated = m.timeGrid.channelFocused
 end sub
 
 sub focusGuide()
-    m.rowGrid.setFocus(true)
+    m.timeGrid.setFocus(true)
 end sub
 
-function onKeyEvent(key as string, press as boolean) as boolean
-    if not press then return false
-    if key = "left"
-        moveTime(-1)
-        return true
-    else if key = "right"
-        moveTime(1)
-        return true
-    else if key = "up" and m.rowGrid.itemFocused = 0
-        m.rowGrid.jumpToItem = m.top.guideChannels.count() - 1
-        return true
-    else if key = "down" and m.rowGrid.itemFocused = m.top.guideChannels.count() - 1
-        m.rowGrid.jumpToItem = 0
-        return true
-    end if
-    return false
-end function
+sub addPrograms(channelNode as object, programs as object)
+    if programs = invalid then return
+    previousEnd = 0
+    for each program in programs
+        startSeconds = isoToSeconds(program.start_time)
+        endSeconds = isoToSeconds(program.end_time)
+        isValid = startSeconds > 0 and endSeconds > startSeconds
+        if isValid and startSeconds < previousEnd
+            if endSeconds <= previousEnd
+                isValid = false
+            else
+                startSeconds = previousEnd
+            end if
+        end if
+        if isValid
+            programNode = channelNode.createChild("ContentNode")
+            programNode.title = program.title
+            programNode.playStart = startSeconds
+            programNode.playDuration = endSeconds - startSeconds
+            previousEnd = endSeconds
+        end if
+    end for
+end sub
 
-function formatGuideTime(seconds as integer) as string
-    value = CreateObject("roDateTime")
-    value.fromSeconds(seconds)
-    value.toLocalTime()
-    suffix = "AM"
-    hour = value.getHours()
-    if hour >= 12 then suffix = "PM"
-    displayHour = hour mod 12
-    if displayHour = 0 then displayHour = 12
-    return displayHour.toStr() + ":" + padTime(value.getMinutes()) + " " + suffix
-end function
-
-function padTime(value as integer) as string
-    if value < 10 then return "0" + value.toStr()
-    return value.toStr()
+function isoToSeconds(value as dynamic) as integer
+    if value = invalid or value = "" then return 0
+    dateTime = CreateObject("roDateTime")
+    dateTime.fromISO8601String(value)
+    return dateTime.asSeconds()
 end function
