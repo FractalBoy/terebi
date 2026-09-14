@@ -10,11 +10,14 @@
         <function name="focusGuide" />
     </interface>
     <children>
-        <Label text="Live TV" translation="[74,100]" width="900" height="46"
-            font="font:LargeBoldSystemFont" color="0xf4f8ffff" />
-        <Label text="Browse channels and programs. Press OK to watch." translation="[76,150]"
-            width="900" height="28" font="font:SmallSystemFont" color="0xa9bad2ff" />
-        <TimeGrid id="timeGrid" translation="[0,300]" numRows="10"
+        <Group translation="[50,0]">
+            <Label id="programTitle" font="font:LargeBoldSystemFont" translation="[0,100]" />
+            <Label id="programSubtitle" font="font:MediumSystemFont" translation="[0,157]" />
+            <Label id="programDescription" font="font:SmallSystemFont" translation="[0,215]"
+                width="1000" wrap="true" />
+            <Poster id="programPoster" loadHeight="300" loadWidth="500" />
+        </Group>
+        <TimeGrid id="timeGrid" translation="[0,600]"
             channelInfoComponentName="LiveGuideChannelInfo" />
     </children>
 </component>

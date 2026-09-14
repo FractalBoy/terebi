@@ -3,6 +3,12 @@ sub init()
     m.timeGrid.observeField("channelFocused", "onChannelFocused")
     m.timeGrid.observeField("programSelected", "onProgramSelected")
     m.timeGrid.observeField("programFocused", "onProgramFocused")
+    '    m.channelLogo = m.top.findNode("channelLogo")
+    '    m.channelName = m.top.findNode("channelName")
+    m.programTitle = m.top.findNode("programTitle")
+    m.programSubtitle = m.top.findNode("programSubtitle")
+    m.programDescription = m.top.findNode("programDescription")
+    m.programPoster = m.top.findNode("programPoster")
     m.loadingComplete = false
 end sub
 
@@ -26,7 +32,7 @@ sub buildContent()
         channelNode = content.createChild("ContentNode")
         channelNode.title = channel.channelNumber.toStr() + " " + channel.name
         channelNode.hdSmallIconUrl = channel.logoUrl
-        channelNode.AddFields({ tvgId: channel.tvgId })
+        channelNode.AddFields(channel)
         addPrograms(channelNode, channel.programs)
     end for
     m.timeGrid.content = content
@@ -34,9 +40,13 @@ end sub
 
 sub onChannelFocused()
     if m.timeGrid.channelFocused >= 0 then m.top.channelSelected = m.timeGrid.channelFocused
+
+    updateProgramDetails()
 end sub
 
 sub onProgramFocused()
+    updateProgramDetails()
+
     if not m.loadingComplete then return
     if m.timeGrid.programFocusedDetails <> invalid and m.timeGrid.programFocusedDetails.focusStartTime >= m.top.endTime
         m.loadingComplete = false
@@ -47,6 +57,36 @@ sub onProgramFocused()
         m.loadMoreProgramsTask.observeField("programs", "onMoreProgramsLoaded")
         m.loadMoreProgramsTask.control = "run"
     end if
+end sub
+
+sub updateProgramDetails()
+    channel = m.timeGrid.content.getChild(m.timeGrid.channelFocused)
+    if channel = invalid then return
+    program = channel.getChild(m.timeGrid.programFocused)
+    if program = invalid then return
+
+    m.programTitle.text = program.title
+
+    programSubtitleParts = []
+
+    if program.season <> invalid
+        episode = "S" + program.season.ToStr("%02d")
+
+        if program.episode <> invalid
+            episode += "E" + program.episode.ToStr("%02d")
+        end if
+
+        programSubtitleParts.push(episode)
+    end if
+
+    if program.SecondaryTitle <> invalid and program.SecondaryTitle <> ""
+        programSubtitleParts.push(program.SecondaryTitle)
+    end if
+
+    programSubtitleParts.push(channel.name)
+
+    m.programSubtitle.text = programSubtitleParts.Join(" - ")
+    m.programDescription.text = program.description
 end sub
 
 sub onMoreProgramsLoaded()
@@ -88,6 +128,9 @@ sub addPrograms(channelNode as object, programs as object)
         programNode.title = program.title
         programNode.playStart = startSeconds
         programNode.playDuration = endSeconds - startSeconds
+        programNode.SecondaryTitle = program.sub_title
+        programNode.description = program.description
+        programNode.AddFields({ season: program.season, episode: program.episode })
     end for
 end sub
 
