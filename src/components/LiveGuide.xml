@@ -15,7 +15,8 @@
             <Label id="programSubtitle" font="font:MediumSystemFont" translation="[0,157]" />
             <Label id="programDescription" font="font:SmallSystemFont" translation="[0,215]"
                 width="1000" wrap="true" />
-            <Poster id="programPoster" loadHeight="300" loadWidth="500" />
+            <Poster id="programPoster" loadHeight="400" loadWidth="700" loadDisplayMode="scaleToFit"
+                translation="[1200,50]" />
         </Group>
         <TimeGrid id="timeGrid" translation="[0,600]"
             channelInfoComponentName="LiveGuideChannelInfo" />

@@ -87,6 +87,30 @@ sub updateProgramDetails()
 
     m.programSubtitle.text = programSubtitleParts.Join(" - ")
     m.programDescription.text = program.description
+
+    if m.getProgramDetailsTask = invalid
+        m.getProgramDetailsTask = CreateObject("roSGNode", "GetProgramDetailsTask")
+    else
+        m.getProgramDetailsTask.control = "stop"
+        m.getProgramDetailsTask.unobserveField("details")
+    end if
+
+    m.getProgramDetailsTask.programId = program.ProgramId
+    m.getProgramDetailsTask.accessToken = m.top.accessToken
+    m.getProgramDetailsTask.serverUrl = m.top.serverUrl
+    m.getProgramDetailsTask.observeField("details", "onProgramDetailsReturned")
+    m.getProgramDetailsTask.control = "run"
+end sub
+
+sub onProgramDetailsReturned()
+    if m.getProgramDetailsTask <> invalid and
+        m.getProgramDetailsTask.details <> invalid and
+        m.getProgramDetailsTask.details.icon <> invalid and
+        m.getProgramDetailsTask.details.icon <> ""
+        m.programPoster.uri = m.getProgramDetailsTask.details.icon
+    else
+        m.programPoster.uri = invalid
+    end if
 end sub
 
 sub onMoreProgramsLoaded()
@@ -130,6 +154,7 @@ sub addPrograms(channelNode as object, programs as object)
         programNode.playDuration = endSeconds - startSeconds
         programNode.SecondaryTitle = program.sub_title
         programNode.description = program.description
+        programNode.ProgramID = program.id.ToStr()
         programNode.AddFields({ season: program.season, episode: program.episode })
     end for
 end sub
