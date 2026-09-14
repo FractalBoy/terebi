@@ -1,5 +1,7 @@
 sub init()
-    m.accessToken = ""
+    m.top.accessToken = ""
+    m.top.observeField("accessToken", "onAccessTokenChanged")
+    m.top.observeField("serverUrl", "onServerUrlChanged")
     m.refreshToken = ""
     m.authRequestId = 0
     m.refreshRequestId = 0
@@ -67,6 +69,14 @@ sub init()
     end if
 end sub
 
+sub onAccessTokenChanged()
+    m.liveGuide.accessToken = m.top.accessToken
+end sub
+
+sub onServerUrlChanged()
+    m.liveGuide.serverUrl = m.top.serverUrl
+end sub
+
 sub buildMainMenu()
     content = createObject("roSGNode", "ContentNode")
     liveItem = content.createChild("ContentNode")
@@ -129,7 +139,7 @@ end sub
 sub onJwtAuthenticationChanged()
     if m.activeJwtTask = invalid or m.activeJwtTask.requestId <> m.authRequestId then return
     if m.activeJwtTask.authStatus = "success"
-        m.accessToken = m.activeJwtTask.accessToken
+        m.top.accessToken = m.activeJwtTask.accessToken
         m.refreshToken = m.activeJwtTask.refreshToken
         updateVideoAuthorization()
         scheduleTokenRefresh()
@@ -173,7 +183,7 @@ end sub
 sub onAccessTokenRefreshChanged()
     if m.activeRefreshTask = invalid or m.activeRefreshTask.requestId <> m.refreshRequestId then return
     if m.activeRefreshTask.refreshStatus = "success"
-        m.accessToken = m.activeRefreshTask.accessToken
+        m.top.accessToken = m.activeRefreshTask.accessToken
         updateVideoAuthorization()
         scheduleTokenRefresh()
     else if m.activeRefreshTask.refreshStatus = "failure"
@@ -183,10 +193,10 @@ end sub
 
 sub updateVideoAuthorization()
     if m.video.content = invalid then return
-    if m.accessToken = invalid or m.accessToken = ""
+    if m.top.accessToken = invalid or m.accessToken = ""
         m.video.content.setHeaders({})
     else
-        m.video.content.setHeaders({ "Authorization": "Bearer " + m.accessToken })
+        m.video.content.setHeaders({ "Authorization": "Bearer " + m.top.accessToken })
         if m.video.state = "playing"
             m.restartVideo = true
             m.video.control = "stop"
@@ -207,7 +217,7 @@ sub onVideoState()
 end sub
 
 sub clearTokens()
-    m.accessToken = ""
+    m.top.accessToken = ""
     m.refreshToken = ""
     updateVideoAuthorization()
 end sub
@@ -229,7 +239,7 @@ sub requestRecordings()
     m.loadingLabel.text = "Loading your DVR library…"
     m.loadingState.visible = true
     m.getRecordingsTask.serverUrl = m.top.serverUrl
-    m.getRecordingsTask.accessToken = m.accessToken
+    m.getRecordingsTask.accessToken = m.top.accessToken
     m.getRecordingsTask.recordingId = ""
     m.getRecordingsTask.observeField("recordings", "onRecordingsReturned")
     m.getRecordingsTask.control = "run"
@@ -237,12 +247,13 @@ end sub
 
 sub requestLiveGuide()
     if not m.isLoggedIn then return
+    m.top.signalBeacon("EPGLaunchInitiate")
     showPage("live")
     m.recordingCount.text = ""
     m.loadingLabel.text = "Loading Live TV…"
     m.loadingState.visible = true
     m.getLiveGuideTask.serverUrl = m.top.serverUrl
-    m.getLiveGuideTask.accessToken = m.accessToken
+    m.getLiveGuideTask.accessToken = m.top.accessToken
     m.getLiveGuideTask.control = "run"
 end sub
 
@@ -329,6 +340,7 @@ sub onLiveGuideReturned()
     end if
     m.liveGuide.guideChannels = m.liveChannels
     m.liveGuide.visible = true
+    m.liveGuide.endTime = m.getLiveGuideTask.endTime
 end sub
 
 sub onLiveChannelSelected()
@@ -404,7 +416,7 @@ sub onRecordingSelected()
     if index < 0 or index >= m.recordings.count() then return
     m.requestMode = "playback"
     m.getRecordingsTask.recordingId = m.recordings[index].id.toStr()
-    m.getRecordingsTask.accessToken = m.accessToken
+    m.getRecordingsTask.accessToken = m.top.accessToken
     m.getRecordingsTask.observeField("recordings", "playRecording")
     m.getRecordingsTask.control = "run"
 end sub

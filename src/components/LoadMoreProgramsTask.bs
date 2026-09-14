@@ -1,32 +1,16 @@
 sub init()
-    m.top.functionName = "getLiveGuide"
+    m.top.functionName = "getPrograms"
 end sub
 
-sub getLiveGuide()
-    m.top.requestStatus = "running"
-    m.top.failureMessage = ""
-
-    channels = getAllPages(m.top.serverUrl + "/api/channels/channels/summary/")
-    if channels = invalid then return
-    logos = getAllPages(m.top.serverUrl + "/api/channels/logos/")
-    if logos = invalid then return
-    epgData = getAllPages(m.top.serverUrl + "/api/epg/epgdata/")
-    if epgData = invalid then return
+sub getPrograms()
     startTime = CreateObject("roDateTime")
-    startTime.FromSeconds((Fix(startTime.AsSeconds() / 3600) * 3600) - 3600)
+    startTime.FromSeconds(m.top.startTime)
     endTime = CreateObject("roDateTime")
     endTime.FromSeconds(startTime.AsSeconds() + 3600 * 5)
+
     programs = getAllPages(m.top.serverUrl + "/api/epg/grid/?start=" + startTime.ToISOString() + "&end=" + endTime.ToISOString())
     if programs = invalid then return
 
-    logosById = {}
-    for each logo in logos
-        if logo.id <> invalid then logosById[logo.id.toStr()] = logo
-    end for
-    tvgIdsByEpgDataId = {}
-    for each epg in epgData
-        if epg.id <> invalid and epg.tvg_id <> invalid then tvgIdsByEpgDataId[epg.id.toStr()] = epg.tvg_id
-    end for
     programsByTvgId = {}
     for each program in programs
         if program.tvg_id <> invalid
@@ -36,32 +20,10 @@ sub getLiveGuide()
         end if
     end for
 
-    guideChannels = []
-    for each channel in channels
-        guideChannel = {
-            id: channel.id,
-            uuid: channel.uuid,
-            name: channel.name,
-            channelNumber: channel.channel_number,
-            logoUrl: "",
-            tvgId: tvgIdsByEpgDataId[channel.epg_data_id.toStr()],
-            programs: []
-        }
-        if channel.logo_id <> invalid and logosById[channel.logo_id.toStr()] <> invalid
-            logo = logosById[channel.logo_id.toStr()]
-            if logo.cache_url <> invalid then guideChannel.logoUrl = logo.cache_url
-        end if
-        if channel.epg_data_id <> invalid and tvgIdsByEpgDataId[channel.epg_data_id.toStr()] <> invalid
-            tvgId = tvgIdsByEpgDataId[channel.epg_data_id.toStr()]
-            if programsByTvgId[tvgId.toStr()] <> invalid then guideChannel.programs = programsByTvgId[tvgId.toStr()]
-        end if
-        guideChannels.push(guideChannel)
-    end for
-    guideChannels.SortBy("channelNumber")
     m.top.endTime = endTime.AsSeconds()
-    m.top.guideChannels = guideChannels
-    m.top.requestStatus = "success"
+    m.top.programs = programsByTvgId
 end sub
+
 
 function getAllPages(url as string) as object
     allItems = []
@@ -85,7 +47,6 @@ function getAllPages(url as string) as object
             end for
             if response.next <> invalid then nextUrl = response.next else nextUrl = ""
         else
-            failRequest("Dispatcharr returned invalid Live TV data.")
             return invalid
         end if
         if nextUrl <> "" and left(nextUrl, 4) <> "http" then nextUrl = m.top.serverUrl + nextUrl
@@ -104,24 +65,14 @@ function getJson(url as string) as dynamic
     port = CreateObject("roMessagePort")
     xfer.SetMessagePort(port)
     if not xfer.AsyncGetToString()
-        failRequest("Unable to start the Live TV request.")
         return invalid
     end if
     msg = wait(0, port)
     if type(msg) <> "roUrlEvent"
-        failRequest("No Live TV response was received from Dispatcharr.")
         return invalid
     end if
     if msg.GetResponseCode() < 200 or msg.GetResponseCode() >= 300
-        failRequest("Unable to load Live TV data from Dispatcharr.")
         return invalid
     end if
-    result = ParseJson(msg.GetString())
-    if result = invalid then failRequest("Dispatcharr returned invalid Live TV data.")
-    return result
+    return ParseJson(msg.GetString())
 end function
-
-sub failRequest(message as string)
-    m.top.failureMessage = message
-    m.top.requestStatus = "failure"
-end sub

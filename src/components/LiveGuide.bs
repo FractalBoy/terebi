@@ -2,6 +2,8 @@ sub init()
     m.timeGrid = m.top.findNode("timeGrid")
     m.timeGrid.observeField("channelFocused", "onChannelFocused")
     m.timeGrid.observeField("programSelected", "onProgramSelected")
+    m.timeGrid.observeField("programFocused", "onProgramFocused")
+    m.loadingComplete = false
 end sub
 
 sub showGuide()
@@ -13,14 +15,18 @@ sub showGuide()
         m.timeGrid.setFocus(true)
         m.top.channelSelected = 0
     end if
+
+    m.top.signalBeacon("EPGLaunchInitiate")
+    m.loadingComplete = true
 end sub
 
 sub buildContent()
     content = CreateObject("roSGNode", "ContentNode")
     for each channel in m.top.guideChannels
         channelNode = content.createChild("ContentNode")
-        channelNode.title = channel.channelNumber.toStr() + "  " + channel.name
+        channelNode.title = channel.channelNumber.toStr() + " " + channel.name
         channelNode.hdSmallIconUrl = channel.logoUrl
+        channelNode.AddFields({ tvgId: channel.tvgId })
         addPrograms(channelNode, channel.programs)
     end for
     m.timeGrid.content = content
@@ -28,6 +34,40 @@ end sub
 
 sub onChannelFocused()
     if m.timeGrid.channelFocused >= 0 then m.top.channelSelected = m.timeGrid.channelFocused
+end sub
+
+sub onProgramFocused()
+    if not m.loadingComplete then return
+    if m.timeGrid.programFocusedDetails <> invalid and m.timeGrid.programFocusedDetails.focusStartTime >= m.top.endTime
+        m.loadingComplete = false
+        m.loadMoreProgramsTask = CreateObject("roSGNode", "LoadMoreProgramsTask")
+        m.loadMoreProgramsTask.serverUrl = m.top.serverUrl
+        m.loadMoreProgramsTask.accessToken = m.top.accessToken
+        m.loadMoreProgramsTask.startTime = m.top.endTime
+        m.loadMoreProgramsTask.observeField("programs", "onMoreProgramsLoaded")
+        m.loadMoreProgramsTask.control = "run"
+    end if
+end sub
+
+sub onMoreProgramsLoaded()
+    m.loadMoreProgramsTask.unobserveField("programs")
+
+    if m.loadMoreProgramsTask.endTime = invalid or m.top.endTime = m.loadMoreProgramsTask.endTime
+        m.loadingComplete = true
+        return
+    end if
+
+    for i = 0 to m.timeGrid.content.getChildCount() - 1
+        channelNode = m.timeGrid.content.getChild(i)
+
+        if channelNode <> invalid
+            programs = m.loadMoreProgramsTask.programs[channelNode.tvgId.ToStr()]
+            addPrograms(channelNode, programs)
+        end if
+    end for
+
+    m.top.endTime = m.loadMoreProgramsTask.endTime
+    m.loadingComplete = true
 end sub
 
 sub onProgramSelected()
@@ -40,25 +80,14 @@ end sub
 
 sub addPrograms(channelNode as object, programs as object)
     if programs = invalid then return
-    previousEnd = 0
+
     for each program in programs
         startSeconds = isoToSeconds(program.start_time)
         endSeconds = isoToSeconds(program.end_time)
-        isValid = startSeconds > 0 and endSeconds > startSeconds
-        if isValid and startSeconds < previousEnd
-            if endSeconds <= previousEnd
-                isValid = false
-            else
-                startSeconds = previousEnd
-            end if
-        end if
-        if isValid
-            programNode = channelNode.createChild("ContentNode")
-            programNode.title = program.title
-            programNode.playStart = startSeconds
-            programNode.playDuration = endSeconds - startSeconds
-            previousEnd = endSeconds
-        end if
+        programNode = channelNode.createChild("ContentNode")
+        programNode.title = program.title
+        programNode.playStart = startSeconds
+        programNode.playDuration = endSeconds - startSeconds
     end for
 end sub
 

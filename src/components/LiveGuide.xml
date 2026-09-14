@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="LiveGuide" extends="Group">
     <interface>
+        <field id="serverUrl" type="string" />
+        <field id="accessToken" type="string" />
         <field id="guideChannels" type="roArray" onChange="showGuide" />
         <field id="channelSelected" type="integer" />
         <field id="channelActivated" type="integer" alwaysNotify="true" />
-        <field id="topRailRequested" type="integer" alwaysNotify="true" />
+        <field id="endTime" type="integer" />
         <function name="focusGuide" />
     </interface>
     <children>
