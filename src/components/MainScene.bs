@@ -113,6 +113,7 @@ sub showMainMenu()
     m.activeView = "menu"
     m.mainMenu.visible = true
     m.menuGrid.setFocus(true)
+    m.top.signalBeacon("AppLaunchComplete")
 end sub
 
 sub onCredentialsSubmitted()

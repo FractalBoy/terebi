@@ -22,7 +22,7 @@ sub showGuide()
         m.top.channelSelected = 0
     end if
 
-    m.top.signalBeacon("EPGLaunchInitiate")
+    m.top.signalBeacon("EPGLaunchComplete")
     m.loadingComplete = true
 end sub
 
@@ -146,12 +146,17 @@ sub addPrograms(channelNode as object, programs as object)
     if programs = invalid then return
 
     for each program in programs
-        startSeconds = isoToSeconds(program.start_time)
-        endSeconds = isoToSeconds(program.end_time)
+        program.startSeconds = isoToSeconds(program.start_time)
+        program.endSeconds = isoToSeconds(program.end_time)
+    end for
+
+    programs.SortBy("startSeconds")
+
+    for each program in programs
         programNode = channelNode.createChild("ContentNode")
         programNode.title = program.title
-        programNode.playStart = startSeconds
-        programNode.playDuration = endSeconds - startSeconds
+        programNode.playStart = program.startSeconds
+        programNode.playDuration = program.endSeconds - program.startSeconds
         programNode.SecondaryTitle = program.sub_title
         programNode.description = program.description
         programNode.ProgramID = program.id.ToStr()
