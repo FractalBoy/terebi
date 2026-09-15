@@ -13,7 +13,7 @@
                 font="font:LargeBoldSystemFont" color="0x7dd3fcff" />
             <Label text="HOME" translation="[72,104]" width="700"
                 height="30" font="font:SmallSystemFont" color="0xa9bad2ff" />
-            <Button id="logoutButton" text="Log out" translation="[1632,45]" minWidth="220"
+            <Button id="logoutButton" text="Log out" translation="[1632,55]" minWidth="220"
                 height="64" showFocusFootprint="false" />
             <Rectangle translation="[70,164]" width="1780" height="2" color="0x1c3150ff" />
             <MarkupGrid id="menuGrid" translation="[290,276]" itemComponentName="MenuPoster"
@@ -25,21 +25,20 @@
                 font="font:LargeBoldSystemFont" color="0x7dd3fcff" />
             <Label text="DVR LIBRARY" translation="[72,104]" width="410" height="28"
                 font="font:SmallSystemFont" color="0xa9bad2ff" />
-            <Label id="recordingCount" translation="[760,42]" width="400" height="35"
+            <Label id="recordingCount" translation="[760,68]" width="400" height="35"
                 font="font:MediumBoldSystemFont" horizAlign="center" color="0xf4f8ffff" />
-            <Button id="refreshButton" text="Refresh" translation="[1632,45]" minWidth="220"
+            <Button id="refreshButton" text="Refresh" translation="[1632,55]" minWidth="220"
                 height="64" showFocusFootprint="false" />
             <Rectangle translation="[70,164]" width="1780" height="2" color="0x1c3150ff" />
         </Group>
-        <Label id="libraryTitle" text="Your recordings" translation="[74,150]" width="900"
+        <Label id="libraryTitle" text="Your recordings" translation="[74,182]" width="900"
             height="46" font="font:LargeBoldSystemFont" color="0xf4f8ffff" visible="false" />
-        <Label id="libraryHint" text="Browse recordings and press OK to play" translation="[76,202]"
-            width="900" height="28" font="font:SmallSystemFont" color="0xa9bad2ff" visible="false" />
-        <MarkupGrid id="recordingsGrid" translation="[74,260]" itemComponentName="RecordingPoster"
-            itemSize="[334,396]" itemSpacing="[24,24]" numColumns="5" numRows="2"
-            drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" visible="false" />
+        <PosterGrid id="recordingsGrid" translation="[74,260]" basePosterSize="[330,330]"
+            posterDisplayMode="scaleToFit" itemSpacing="[24,24]" numColumns="5" useAtlas="false"
+            numRows="1" vertFocusAnimationStyle="floatingFocus" visible="false" caption1NumLines="1"
+            caption2NumLines="2" />
         <LiveGuide id="liveGuide" visible="false" />
-        <Group id="detailsPanel" translation="[74,696]" visible="false">
+        <Group id="detailsPanel" translation="[74,740]" visible="false">
             <Rectangle width="1772" height="294" color="0x132238ee" />
             <Rectangle width="6" height="294" color="0x38bdf8ff" />
             <Label id="detailsStatus" translation="[34,26]" width="310" height="28"

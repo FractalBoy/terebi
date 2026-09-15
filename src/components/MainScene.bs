@@ -17,7 +17,6 @@ sub init()
     m.grid = m.top.findNode("recordingsGrid")
     m.liveGuide = m.top.findNode("liveGuide")
     m.libraryTitle = m.top.findNode("libraryTitle")
-    m.libraryHint = m.top.findNode("libraryHint")
     m.recordingCount = m.top.findNode("recordingCount")
     m.detailsPanel = m.top.findNode("detailsPanel")
     m.detailsStatus = m.top.findNode("detailsStatus")
@@ -303,21 +302,31 @@ sub onRecordingsReturned()
     content = createObject("roSGNode", "ContentNode")
     for each recording in m.recordings
         item = content.createChild("ContentNode")
-        item.addFields({ posterUrl: "", recordingStatus: "", programStart: "", programEnd: "", remuxSuccess: false })
-        item.title = recording.custom_properties.program.title
-        item.secondaryTitle = recording.custom_properties.program.sub_title
+        item.addFields({
+            posterUrl: recording.custom_properties.poster_url,
+            recordingStatus: recording.custom_properties.status,
+            programStart: recording.start_time,
+            programEnd: recording.end_time,
+            remuxSuccess: recording.custom_properties.remux_success
+        })
+        item.shortdescriptionline1 = recording.custom_properties.program.title
+        item.shortdescriptionline2 = recording.custom_properties.program.sub_title
+        item.hdgridposterurl = recording.custom_properties.poster_url
         item.description = recording.custom_properties.program.description
-        item.posterUrl = recording.custom_properties.poster_url
-        item.recordingStatus = recording.custom_properties.status
-        item.remuxSuccess = recording.custom_properties.remux_success
-        item.programStart = recording.start_time
-        item.programEnd = recording.end_time
     end for
-    m.recordingCount.text = m.recordings.count().toStr() + " recordings"
+
+    recordingCount = m.recordings.count()
+    m.recordingCount.text = recordingCount.toStr()
+
+    if recordingCount = 1
+        m.recordingCount.text += " recording"
+    else
+        m.recordingCount.text += " recordings"
+    end if
+
     m.grid.content = content
     m.grid.visible = true
     m.libraryTitle.visible = true
-    m.libraryHint.visible = true
     m.grid.setFocus(true)
     showRecordingDetails(0)
 end sub
@@ -392,7 +401,6 @@ sub hidePage()
     m.grid.visible = false
     m.liveGuide.visible = false
     m.libraryTitle.visible = false
-    m.libraryHint.visible = false
     m.detailsPanel.visible = false
     m.loadingState.visible = false
     m.emptyState.visible = false
@@ -407,7 +415,6 @@ sub restoreActivePage()
         m.dvrHeader.visible = true
         m.grid.visible = true
         m.libraryTitle.visible = true
-        m.libraryHint.visible = true
         showRecordingDetails(m.grid.itemFocused)
         m.grid.setFocus(true)
     end if
