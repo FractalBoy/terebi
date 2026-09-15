@@ -1,4 +1,5 @@
 sub init()
+    m.appLaunchComplete = false
     m.top.accessToken = ""
     m.top.observeField("accessToken", "onAccessTokenChanged")
     m.top.observeField("serverUrl", "onServerUrlChanged")
@@ -80,15 +81,11 @@ end sub
 sub buildMainMenu()
     content = createObject("roSGNode", "ContentNode")
     liveItem = content.createChild("ContentNode")
-    liveItem.addFields({ menuType: "", description: "" })
-    liveItem.menuType = "live"
+    liveItem.addFields({ menuType: "live" })
     liveItem.title = "Live TV"
-    liveItem.description = "Browse channels and see what is on now."
     dvrItem = content.createChild("ContentNode")
-    dvrItem.addFields({ menuType: "", description: "" })
-    dvrItem.menuType = "dvr"
+    dvrItem.addFields({ menuType: "dvr" })
     dvrItem.title = "DVR"
-    dvrItem.description = "Watch completed and in-progress recordings."
     m.menuGrid.content = content
 end sub
 
@@ -113,7 +110,11 @@ sub showMainMenu()
     m.activeView = "menu"
     m.mainMenu.visible = true
     m.menuGrid.setFocus(true)
-    m.top.signalBeacon("AppLaunchComplete")
+
+    if not m.appLaunchComplete
+        m.appLaunchComplete = true
+        m.top.signalBeacon("AppLaunchComplete")
+    end if
 end sub
 
 sub onCredentialsSubmitted()

@@ -11,27 +11,25 @@
         <Group id="mainMenu" visible="false">
             <Label text="TEREBI" translation="[70,48]" width="410" height="42"
                 font="font:LargeBoldSystemFont" color="0x7dd3fcff" />
-            <Label text="Choose what you want to watch" translation="[72,104]" width="700"
+            <Label text="HOME" translation="[72,104]" width="700"
                 height="30" font="font:SmallSystemFont" color="0xa9bad2ff" />
             <Button id="logoutButton" text="Log out" translation="[1632,45]" minWidth="220"
                 height="64" showFocusFootprint="false" />
             <Rectangle translation="[70,164]" width="1780" height="2" color="0x1c3150ff" />
-            <Label text="WATCH" translation="[70,204]" width="400" height="28"
-                font="font:SmallBoldSystemFont" color="0xa9bad2ff" />
             <MarkupGrid id="menuGrid" translation="[290,276]" itemComponentName="MenuPoster"
                 itemSize="[650,438]" itemSpacing="[40,0]" numColumns="2" numRows="1"
-                drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
+                vertFocusAnimationStyle="floatingFocus" />
         </Group>
         <Group id="dvrHeader" visible="false">
-            <Label text="TEREBI" translation="[70,23]" width="410" height="34"
-                font="font:MediumBoldSystemFont" color="0x7dd3fcff" />
-            <Label text="DVR LIBRARY" translation="[70,58]" width="410" height="28"
+            <Label text="TEREBI" translation="[70,48]" width="410" height="42"
+                font="font:LargeBoldSystemFont" color="0x7dd3fcff" />
+            <Label text="DVR LIBRARY" translation="[72,104]" width="410" height="28"
                 font="font:SmallSystemFont" color="0xa9bad2ff" />
             <Label id="recordingCount" translation="[760,42]" width="400" height="35"
                 font="font:MediumBoldSystemFont" horizAlign="center" color="0xf4f8ffff" />
-            <Button id="refreshButton" text="Refresh" translation="[1632,25]" minWidth="220"
-                height="62" showFocusFootprint="false" />
-            <Rectangle translation="[0,112]" width="1920" height="2" color="0x1c3150ff" />
+            <Button id="refreshButton" text="Refresh" translation="[1632,45]" minWidth="220"
+                height="64" showFocusFootprint="false" />
+            <Rectangle translation="[70,164]" width="1780" height="2" color="0x1c3150ff" />
         </Group>
         <Label id="libraryTitle" text="Your recordings" translation="[74,150]" width="900"
             height="46" font="font:LargeBoldSystemFont" color="0xf4f8ffff" visible="false" />
