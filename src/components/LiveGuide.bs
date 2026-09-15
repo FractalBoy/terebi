@@ -15,7 +15,7 @@ end sub
 sub showGuide()
     if m.top.guideChannels = invalid then return
     now = CreateObject("roDateTime")
-    m.timeGrid.contentStartTime = now.asSeconds()
+    m.timeGrid.contentStartTime = Fix(now.asSeconds() / 3600) * 3600
     buildContent()
     if m.top.guideChannels.count() > 0
         m.timeGrid.setFocus(true)
